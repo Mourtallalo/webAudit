@@ -250,6 +250,7 @@ function construireDetail(fiche) {
   const detail = creer("div", "obs-detail");
 
   const lignes = [
+    { kind: "adapter", tag: "À adapter", texte: fiche.adapter },
     { kind: "quoi", tag: "Ce que c'est", texte: fiche.quoi },
     { kind: "risque", tag: "Le risque", texte: fiche.risque },
   ];

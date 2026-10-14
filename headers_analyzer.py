@@ -11,7 +11,21 @@ Auteur : Mourtalla LO
 Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
 """
 
+import re
+
 NOM_MODULE = "En-tetes HTTP"
+
+# Décision de l'auteur (E32) : la valeur des en-têtes n'est pas évaluée.
+MESSAGE_PRESENT = "En-tête présent (sa valeur n'est pas évaluée par l'outil)."
+
+# E24 : la directive CSP frame-ancestors protège elle aussi du détournement de clic.
+MESSAGE_FRAME_ANCESTORS = "Protection assurée par la directive CSP frame-ancestors."
+
+# E33 : un numéro de version, c'est-à-dire au moins un chiffre.
+MOTIF_VERSION = re.compile(r"\d")
+
+MESSAGE_SANS_VERSION = "En-tête présent, sans numéro de version : rien d'exploitable divulgué."
+MESSAGE_AVEC_VERSION = "En-tête divulguant un numéro de version du logiciel."
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +99,8 @@ def analyser_headers_reponse(reponse):
     headers_recus = {cle.lower(): valeur for cle, valeur in reponse.headers.items()}
     resultat["headers_bruts"] = dict(reponse.headers)
 
+    csp = headers_recus.get("content-security-policy", "")
+
     # --- Verification de chaque en-tete de securite ------------------------
     for nom_header, infos in SECURITY_HEADERS.items():
         cle = nom_header.lower()
@@ -96,7 +112,18 @@ def analyser_headers_reponse(reponse):
                 "valeur": headers_recus[cle],
                 "niveau": "OK",
                 "role": infos["role"],
-                "message": "En-tête présent.",
+                "message": MESSAGE_PRESENT,
+            }
+        elif nom_header == "X-Frame-Options" and _contient_frame_ancestors(csp):
+            # E24 : X-Frame-Options absent, mais la CSP protège déjà du
+            # détournement de clic par sa directive frame-ancestors.
+            observation = {
+                "header": nom_header,
+                "present": False,
+                "valeur": None,
+                "niveau": "OK",
+                "role": infos["role"],
+                "message": MESSAGE_FRAME_ANCESTORS,
             }
         else:
             # En-tete absent : on enregistre une observation selon la criticite
@@ -111,16 +138,25 @@ def analyser_headers_reponse(reponse):
         resultat["observations"].append(observation)
 
     # --- Detection d'en-tetes qui exposent trop d'informations -------------
-    # Les en-tetes Server et X-Powered-By peuvent reveler des versions logicielles
+    # Les en-têtes Server et X-Powered-By ne sont pénalisés (INFO) que s'ils
+    # divulguent un numéro de version (E33) ; sinon, observation OK.
     for header_sensible in ["server", "x-powered-by"]:
         if header_sensible in headers_recus:
+            valeur = headers_recus[header_sensible]
+            avec_version = bool(MOTIF_VERSION.search(valeur))
             resultat["observations"].append({
                 "header": header_sensible.title(),
                 "present": True,
-                "valeur": headers_recus[header_sensible],
-                "niveau": "INFO",
+                "valeur": valeur,
+                "niveau": "INFO" if avec_version else "OK",
                 "role": "Révèle des informations sur la technologie du serveur.",
-                "message": "En-tête divulguant potentiellement des informations sensibles.",
+                "message": MESSAGE_AVEC_VERSION if avec_version else MESSAGE_SANS_VERSION,
             })
 
     return resultat
+
+
+def _contient_frame_ancestors(csp):
+    """True si la politique CSP contient la directive frame-ancestors (valeur non évaluée)."""
+    return any(directive.strip().lower().split(" ")[0] == "frame-ancestors"
+               for directive in csp.split(";"))

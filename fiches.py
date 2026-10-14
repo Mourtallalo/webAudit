@@ -24,8 +24,17 @@ Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
 
 RECHARGER_NGINX = "sudo nginx -t && sudo systemctl reload nginx"
 
+# Avertissement placé en tête de chaque fiche d'en-tête (C25).
+ADAPTER_EN_TETE = (
+    "Exemple à adapter à votre hébergement et à votre site : sur Vercel, par "
+    "exemple, l'en-tête se déclare dans le fichier vercel.json, et non dans "
+    "Nginx ou Apache. Vérifiez ensuite que la politique ne bloque pas les "
+    "services utilisés par le site (polices, statistiques, paiement, cartes…)."
+)
+
 FICHES = {
     "Content-Security-Policy": {
+        "adapter": ADAPTER_EN_TETE,
         "quoi": "Une liste blanche qui indique au navigateur les seules sources de "
                 "scripts, de styles et d'images qu'il a le droit de charger sur vos pages.",
         "risque": "Sans elle, un script injecté — via un commentaire, un formulaire, ou "
@@ -48,6 +57,7 @@ FICHES = {
     },
 
     "Strict-Transport-Security": {
+        "adapter": ADAPTER_EN_TETE,
         "quoi": "Demande au navigateur de n'utiliser que HTTPS pour ce domaine pendant la "
                 "durée indiquée, même si le visiteur tape l'adresse sans « https:// ».",
         "risque": "Sans HSTS, la première requête part en clair et peut être interceptée sur "
@@ -65,6 +75,7 @@ FICHES = {
     },
 
     "X-Frame-Options": {
+        "adapter": ADAPTER_EN_TETE,
         "quoi": "Interdit l'affichage de vos pages dans un cadre (iframe) depuis un autre site.",
         "risque": "Un site pirate superpose un cadre transparent de votre site au-dessus de ses "
                   "propres boutons : le visiteur croit cliquer chez lui, mais valide une action "
@@ -81,6 +92,7 @@ FICHES = {
     },
 
     "X-Content-Type-Options": {
+        "adapter": ADAPTER_EN_TETE,
         "quoi": "Force le navigateur à respecter le type de fichier déclaré par le serveur, "
                 "au lieu de le deviner d'après son contenu.",
         "risque": "Un fichier téléversé par un visiteur et annoncé comme image peut être "
@@ -94,6 +106,7 @@ FICHES = {
     },
 
     "Referrer-Policy": {
+        "adapter": ADAPTER_EN_TETE,
         "quoi": "Limite l'adresse de la page d'origine transmise aux sites externes lorsqu'un "
                 "visiteur suit un lien sortant.",
         "risque": "Une URL interne — jeton de réinitialisation de mot de passe, identifiant de "
@@ -107,6 +120,7 @@ FICHES = {
     },
 
     "Permissions-Policy": {
+        "adapter": ADAPTER_EN_TETE,
         "quoi": "Coupe l'accès aux fonctions sensibles du navigateur (caméra, micro, "
                 "géolocalisation) pour tous les scripts de la page.",
         "risque": "Un script tiers compromis — régie publicitaire, outil de mesure d'audience — "
@@ -119,9 +133,12 @@ FICHES = {
              "code": "Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\""},
         ],
         "apres": RECHARGER_NGINX,
+        "note": "Si le site utilise la caméra (par exemple un lecteur de codes-barres), "
+                "autorisez le site lui-même avec camera=(self) plutôt que camera=().",
     },
 
     "Server": {
+        "adapter": ADAPTER_EN_TETE,
         "quoi": "L'en-tête Server annonce le logiciel qui sert vos pages, parfois avec son "
                 "numéro de version exact.",
         "risque": "L'attaquant n'a plus à chercher : il cible directement les failles publiées "
@@ -136,6 +153,7 @@ FICHES = {
     },
 
     "X-Powered-By": {
+        "adapter": ADAPTER_EN_TETE,
         "quoi": "Annonce le langage ou le cadriciel qui génère les pages (PHP, Express, "
                 "ASP.NET), souvent avec sa version.",
         "risque": "Même mécanique que l'en-tête Server : la version exacte guide l'attaquant "

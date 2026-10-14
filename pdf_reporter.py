@@ -349,6 +349,10 @@ def _recommandation(obs, numero):
                 info["couleur"].hexval().replace("0x", "#"),
                 info["glyphe"], info["libelle"]),
             S_SOUS_SECTION),
+    ]
+    if fiche.get("adapter"):
+        blocs += [_p("À ADAPTER", S_ETIQUETTE), _p(fiche["adapter"], S_CORPS_DOUX)]
+    blocs += [
         _p("CE QUE C'EST", S_ETIQUETTE),
         _p(fiche.get("quoi", ""), S_CORPS),
         _p("LE RISQUE", S_ETIQUETTE),
