@@ -1,0 +1,609 @@
+/* ===================================================================
+   WebAudit — page de comparaison multi-sites
+   -------------------------------------------------------------------
+   Complement a style.css : reprend les memes jetons de design
+   (couleurs, espacements, rayons) et n'en introduit aucun nouveau.
+   A charger apres style.css.
+   =================================================================== */
+
+/* ─────────────────────────────────────────────────────────────────
+   1. Trame
+   ───────────────────────────────────────────────────────────────── */
+
+.page-large { max-width: 980px; }
+
+.hero-compact { padding: var(--sp-5) 0 var(--sp-6); }
+.hero-compact h1 { font-size: clamp(1.9rem, 6.5vw, 2.8rem); }
+
+/* ─────────────────────────────────────────────────────────────────
+   2. Avertissement ethique
+   Il precede le formulaire et n'est pas repliable : c'est le cadre
+   d'usage de l'outil, pas une mention a faire disparaitre.
+   ───────────────────────────────────────────────────────────────── */
+
+.ethique {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-5);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  border-radius: var(--r-md);
+}
+
+.ethique-glyph {
+  display: grid;
+  place-items: center;
+  width: 22px; height: 22px;
+  flex: none;
+  background: var(--warn);
+  color: var(--surface);
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ethique-titre {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--warn);
+  margin-bottom: 3px;
+}
+
+.ethique p { font-size: 13.5px; color: var(--ink); }
+
+.ethique-detail {
+  margin-top: var(--sp-2);
+  font-size: 12.5px !important;
+  color: var(--ink-2) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   3. Saisie de la liste
+   ───────────────────────────────────────────────────────────────── */
+
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.field-head .field-label { margin-bottom: 0; }
+
+.compteur {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.compteur.is-over { color: var(--crit); }
+
+.url-textarea {
+  width: 100%;
+  padding: 13px 15px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.8;
+  resize: vertical;
+  transition: border-color var(--t-fast) ease;
+}
+.url-textarea::placeholder { color: var(--ink-2); opacity: 0.55; }
+.url-textarea:hover { border-color: var(--ink-2); }
+.url-textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  border-color: var(--focus);
+}
+.url-textarea[aria-invalid="true"] { border-color: var(--crit); }
+
+/* ─────────────────────────────────────────────────────────────────
+   4. Campagne en cours
+   ───────────────────────────────────────────────────────────────── */
+
+.compteur-gros {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.compteur-gros b {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.campagne-cible {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin-bottom: var(--sp-5);
+}
+
+.journal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: var(--sp-5);
+}
+
+.journal-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 8px 11px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  animation: journal-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes journal-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.journal-note {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  padding: 2px 7px;
+  flex: none;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 700;
+}
+.journal-item[data-niveau="OK"]            .journal-note { background: var(--ok-bg);   color: var(--ok); }
+.journal-item[data-niveau="AVERTISSEMENT"] .journal-note { background: var(--warn-bg); color: var(--warn); }
+.journal-item[data-niveau="CRITIQUE"]      .journal-note { background: var(--crit-bg); color: var(--crit); }
+.journal-item[data-niveau="NEUTRE"]        .journal-note { background: var(--paper-2); color: var(--ink-2); }
+
+.journal-url {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journal-message {
+  flex: none;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   5. Tete du classement
+   ───────────────────────────────────────────────────────────────── */
+
+.classement-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-5);
+  margin-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--line);
+}
+
+.classement-titre {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--sp-2);
+}
+
+.classement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   5 bis. Mesure incomplete
+   Les pastilles et l'encart sont definis dans style.css, car la page
+   d'audit les utilise aussi. Ne reste ici que le rendu des barres.
+   ───────────────────────────────────────────────────────────────── */
+
+/* La barre d'un scan partiel est hachuree : la couleur seule ne doit
+   pas etre le seul indice que la mesure est incomplete. */
+.barre-ligne.is-partiel .barre-remplissage {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.45) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   6. Podium
+   ───────────────────────────────────────────────────────────────── */
+
+.podium {
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+
+.podium-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  animation: card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.podium-item[data-rang="1"] { animation-delay: 0ms; border-color: var(--seal); }
+.podium-item[data-rang="2"] { animation-delay: 90ms; }
+.podium-item[data-rang="3"] { animation-delay: 180ms; }
+
+.podium-rang {
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.podium-item[data-rang="1"] .podium-rang {
+  background: var(--seal);
+  color: var(--paper);
+}
+
+.podium-corps { flex: 1; min-width: 0; }
+
+.podium-site {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-score {
+  font-size: 12px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.podium-note {
+  flex: none;
+  padding: 4px 11px;
+  border-radius: var(--r-sm);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.podium-item[data-niveau="OK"]            .podium-note { background: var(--ok-bg);   color: var(--ok); }
+.podium-item[data-niveau="AVERTISSEMENT"] .podium-note { background: var(--warn-bg); color: var(--warn); }
+.podium-item[data-niveau="CRITIQUE"]      .podium-note { background: var(--crit-bg); color: var(--crit); }
+.podium-item[data-niveau="NEUTRE"]        .podium-note { background: var(--paper-2); color: var(--ink-2); }
+
+/* ─────────────────────────────────────────────────────────────────
+   7. Graphique comparatif
+   La longueur de barre porte la valeur ; la couleur ne porte que la
+   classe de note, doublee de la lettre et du nombre en clair.
+   ───────────────────────────────────────────────────────────────── */
+
+.graphique {
+  margin: 0 0 var(--sp-6);
+  padding: var(--sp-5) var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.graphique-titre {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+
+.graphique-sous {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+.legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  margin-bottom: var(--sp-4);
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+
+.legende-item { display: flex; align-items: center; gap: 6px; }
+
+.legende-puce {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+}
+.legende-item[data-niveau="OK"]            .legende-puce { background: var(--ok); }
+.legende-item[data-niveau="AVERTISSEMENT"] .legende-puce { background: var(--warn); }
+.legende-item[data-niveau="CRITIQUE"]      .legende-puce { background: var(--crit); }
+
+.barres {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.barre-ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+  padding: 7px 8px;
+  border-radius: var(--r-sm);
+  transition: background-color var(--t-fast) ease;
+}
+.barre-ligne:hover { background: var(--paper); }
+
+.barre-site {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barre-piste {
+  height: 9px;
+  background: var(--paper-2);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.barre-remplissage {
+  height: 100%;
+  width: 0;
+  border-radius: var(--r-pill);
+  transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 28ms);
+}
+.barre-ligne[data-niveau="OK"]            .barre-remplissage { background: var(--ok); }
+.barre-ligne[data-niveau="AVERTISSEMENT"] .barre-remplissage { background: var(--warn); }
+.barre-ligne[data-niveau="CRITIQUE"]      .barre-remplissage { background: var(--crit); }
+/* Sans note attribuee, la barre reste grise : elle mesure, elle ne juge pas. */
+.barre-ligne[data-niveau="NEUTRE"]        .barre-remplissage { background: var(--line-strong); }
+
+.barre-valeur {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.barre-valeur b {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.barre-note {
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.barre-ligne[data-niveau="OK"]            .barre-note { background: var(--ok-bg);   color: var(--ok); }
+.barre-ligne[data-niveau="AVERTISSEMENT"] .barre-note { background: var(--warn-bg); color: var(--warn); }
+.barre-ligne[data-niveau="CRITIQUE"]      .barre-note { background: var(--crit-bg); color: var(--crit); }
+.barre-ligne[data-niveau="NEUTRE"]        .barre-note { background: var(--paper-2); color: var(--ink-2); }
+
+/* ─────────────────────────────────────────────────────────────────
+   8. Tableau detaille
+   ───────────────────────────────────────────────────────────────── */
+
+.tableau-enveloppe {
+  margin-bottom: var(--sp-6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.tableau {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tableau th, .tableau td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.tableau thead th {
+  position: sticky;
+  top: 0;
+  background: var(--paper-2);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.tableau tbody tr:last-child th,
+.tableau tbody tr:last-child td { border-bottom: none; }
+
+.tableau tbody tr { transition: background-color var(--t-fast) ease; }
+.tableau tbody tr:hover { background: var(--paper); }
+
+.col-rang {
+  width: 44px;
+  color: var(--ink-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.col-site { max-width: 220px; }
+
+.lien-site {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+}
+.lien-site:hover { color: var(--seal); border-bottom-color: var(--seal); }
+
+.col-cms {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-badge {
+  display: inline-block;
+  min-width: 30px;
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.note-badge[data-niveau="OK"]            { background: var(--ok-bg);   color: var(--ok); }
+.note-badge[data-niveau="AVERTISSEMENT"] { background: var(--warn-bg); color: var(--warn); }
+.note-badge[data-niveau="CRITIQUE"]      { background: var(--crit-bg); color: var(--crit); }
+.note-badge[data-niveau="NEUTRE"]        { background: var(--paper-2); color: var(--ink-2); }
+
+.compte-critique {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 7px;
+  background: var(--crit-bg);
+  color: var(--crit);
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Oui/non en toutes lettres : la colonne se lit sans distinguer
+   les couleurs. */
+.oui-non { font-size: 12.5px; font-weight: 600; }
+.oui-non[data-valeur="oui"] { color: var(--ok); }
+.oui-non[data-valeur="non"] { color: var(--crit); }
+
+/* ─────────────────────────────────────────────────────────────────
+   9. Adresses non auditees
+   ───────────────────────────────────────────────────────────────── */
+
+.echecs {
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--crit);
+  border-radius: var(--r-md);
+}
+
+.echecs-titre {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: var(--sp-3);
+}
+
+.echecs-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.echec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+}
+
+.echec-url {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.echec-message { color: var(--ink-2); }
+
+/* ─────────────────────────────────────────────────────────────────
+   10. Adaptations : tablette (>= 640px)
+   ───────────────────────────────────────────────────────────────── */
+
+@media (min-width: 640px) {
+  .podium { grid-template-columns: repeat(3, 1fr); }
+
+  .classement-head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .graphique { padding: var(--sp-5); }
+
+  /* La barre passe sur une seule ligne : nom, piste, valeur. */
+  .barre-ligne {
+    grid-template-columns: 180px minmax(0, 1fr) 76px;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+  .barre-valeur { justify-content: flex-end; }
+
+  .echec-item { flex-direction: row; gap: var(--sp-3); align-items: baseline; }
+}
+
+@media (min-width: 1024px) {
+  .barre-ligne { grid-template-columns: 220px minmax(0, 1fr) 80px; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   11. Mouvement reduit
+   ───────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .podium-item, .journal-item { animation: none; }
+  .barre-remplissage { transition-duration: 0.01ms; transition-delay: 0ms; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   12. Impression
+   ───────────────────────────────────────────────────────────────── */
+
+@media print {
+  .classement-actions, .journal, .legende { display: none; }
+  .graphique, .tableau-enveloppe, .podium-item { box-shadow: none; break-inside: avoid; }
+  .tableau-enveloppe { overflow: visible; }
+}

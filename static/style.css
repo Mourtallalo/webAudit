@@ -1,0 +1,1333 @@
+/* ===================================================================
+   WebAudit — feuille de style
+   -------------------------------------------------------------------
+   Concept : le rapport d'audit comme document officiel tamponne.
+   Papier legerement teinte, encre sombre, sceau ocre, et un tampon
+   circulaire qui porte la note finale.
+
+   Les couleurs de severite (CRITIQUE / AVERTISSEMENT / INFO / OK) sont
+   reservees : elles ne servent jamais de couleur decorative, et ne
+   portent jamais un sens a elles seules — un glyphe et un libelle
+   texte les accompagnent systematiquement. Leurs contrastes ont ete
+   verifies au niveau AA (>= 4.5:1) sur leur fond reel, dans les deux
+   themes.
+   =================================================================== */
+
+/* ─────────────────────────────────────────────────────────────────
+   1. Jetons de design
+   ───────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light;
+  /* Barres de defilement accordees au theme (heritees par tous les blocs). */
+  scrollbar-color: var(--line-strong) transparent;
+  /* Surfaces et encre — theme clair */
+  --paper:        #FBF9F3;
+  --paper-2:      #F4F1E7;
+  --surface:      #FFFFFF;
+  --surface-hover:#FCFBF7;
+  --line:         #E2DCCC;
+  --line-strong:  #CFC7B2;
+  --ink:          #15140F;
+  --ink-2:        #56524A;
+  --seal:         #7A5A1E;
+  --seal-bg:      #F6EFDD;
+
+  /* Severites — texte */
+  --crit:    #8E1710;
+  --warn:    #7E570A;
+  --info:    #1D60AB;
+  --ok:      #1F6E3C;
+
+  /* Severites — fonds de pastille */
+  --crit-bg: #FBEAE8;
+  --warn-bg: #FAF2DE;
+  --info-bg: #E9F0FA;
+  --ok-bg:   #E6F3EA;
+
+  /* Code */
+  --code-bg: #F4F1E7;
+  --code-fg: #23211A;
+
+  /* Ombres */
+  --shadow-sm: 0 1px 2px rgba(21, 20, 15, 0.05);
+  --shadow-md: 0 2px 4px rgba(21, 20, 15, 0.05), 0 8px 20px -8px rgba(21, 20, 15, 0.12);
+  --shadow-lg: 0 4px 8px rgba(21, 20, 15, 0.06), 0 20px 44px -12px rgba(21, 20, 15, 0.18);
+
+  /* Grille de fond (trame du papier) */
+  --grain: rgba(21, 20, 15, 0.045);
+
+  /* Typographie */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Espacements */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* Rayons */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* Focus */
+  --focus: #1D60AB;
+
+  /* Durees */
+  --t-fast: 120ms;
+  --t-mid: 240ms;
+  --t-slow: 400ms;
+}
+
+/* Theme sombre : applique soit par preference systeme (sauf si
+   l'utilisateur a explicitement choisi le clair), soit par le
+   bouton bascule qui pose data-theme="dark". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper:        #131310;
+    --paper-2:      #23221B;
+    --surface:      #1C1B16;
+    --surface-hover:#22211A;
+    --line:         #33312A;
+    --line-strong:  #474438;
+    --ink:          #F2EFE6;
+    --ink-2:        #A8A392;
+    --seal:         #D8B45E;
+    --seal-bg:      #2A2418;
+
+    --crit:    #EF7A70;
+    --warn:    #F7C878;
+    --info:    #8FBAF2;
+    --ok:      #86D6A0;
+
+    --crit-bg: #2E201D;
+    --warn-bg: #2F2817;
+    --info-bg: #1C2533;
+    --ok-bg:   #1B2B21;
+
+    --code-bg: #23221B;
+    --code-fg: #E4E0D3;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.35), 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.4), 0 20px 44px -12px rgba(0, 0, 0, 0.7);
+
+    --grain: rgba(242, 239, 230, 0.05);
+    --focus: #8FBAF2;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper:        #131310;
+  --paper-2:      #23221B;
+  --surface:      #1C1B16;
+  --surface-hover:#22211A;
+  --line:         #33312A;
+  --line-strong:  #474438;
+  --ink:          #F2EFE6;
+  --ink-2:        #A8A392;
+  --seal:         #D8B45E;
+  --seal-bg:      #2A2418;
+
+  --crit:    #EF7A70;
+  --warn:    #F7C878;
+  --info:    #8FBAF2;
+  --ok:      #86D6A0;
+
+  --crit-bg: #2E201D;
+  --warn-bg: #2F2817;
+  --info-bg: #1C2533;
+  --ok-bg:   #1B2B21;
+
+  --code-bg: #23221B;
+  --code-fg: #E4E0D3;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.35), 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.4), 0 20px 44px -12px rgba(0, 0, 0, 0.7);
+
+  --grain: rgba(242, 239, 230, 0.05);
+  --focus: #8FBAF2;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   2. Base
+   ───────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Plusieurs elements de cette feuille posent un display explicite ;
+   sans cette regle, il l'emporterait sur l'attribut hidden. */
+[hidden] { display: none !important; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--paper);
+  background-image: radial-gradient(circle at 1px 1px, var(--grain) 1px, transparent 0);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--t-mid) ease, color var(--t-mid) ease;
+}
+
+h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
+p { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
+
+b, strong { font-weight: 600; }
+
+code, pre { font-family: var(--font-mono); }
+
+svg { display: block; }
+
+/* Les icones du jeu d'interface sont dessinees en traits. */
+.theme-toggle svg,
+.btn-arrow,
+.btn-ghost svg,
+.chevron,
+.copy-btn svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   3. Utilitaires d'accessibilite
+   ───────────────────────────────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--sp-4);
+  z-index: 50;
+  padding: 10px 16px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+  font-weight: 500;
+  transition: top var(--t-fast) ease;
+}
+.skip-link:focus { top: var(--sp-4); }
+
+/* ─────────────────────────────────────────────────────────────────
+   4. Trame de page
+   ───────────────────────────────────────────────────────────────── */
+
+.page {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 var(--sp-4);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main { flex: 1; }
+
+/* ─── Barre haute ───────────────────────────────────────────────── */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-4) 0;
+  margin-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--line);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wordmark-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  background: var(--seal);
+  color: var(--paper);
+  border-radius: var(--r-sm);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+  padding-bottom: 1px;
+}
+
+.wordmark-text {
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  padding: 7px 12px 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: background-color var(--t-fast) ease,
+              border-color var(--t-fast) ease,
+              color var(--t-fast) ease,
+              transform var(--t-fast) ease;
+}
+.theme-toggle:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.theme-toggle:active { transform: scale(0.97); }
+.theme-toggle svg { width: 15px; height: 15px; }
+
+/* Le soleil s'affiche en theme clair, la lune en theme sombre. */
+.icon-moon { display: none; }
+:root[data-theme="dark"] .icon-sun { display: none; }
+:root[data-theme="dark"] .icon-moon { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .icon-sun { display: none; }
+  :root:not([data-theme="light"]) .icon-moon { display: block; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   5. Ecran de saisie
+   ───────────────────────────────────────────────────────────────── */
+
+.hero { padding: var(--sp-5) 0 var(--sp-7); }
+
+.eyebrow {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--seal);
+  margin-bottom: var(--sp-4);
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.1rem, 8vw, 3.35rem);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--sp-4);
+}
+
+.hero-sub {
+  color: var(--ink-2);
+  font-size: 16px;
+  max-width: 54ch;
+  margin-bottom: var(--sp-6);
+}
+
+/* ─── Champ URL ─────────────────────────────────────────────────── */
+
+.field { margin-bottom: var(--sp-5); }
+
+.field-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  margin-bottom: var(--sp-2);
+}
+
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.url-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  font-size: 16px;
+  transition: border-color var(--t-fast) ease, box-shadow var(--t-fast) ease;
+}
+.url-input::placeholder { color: var(--ink-2); opacity: 0.65; }
+.url-input:hover { border-color: var(--ink-2); }
+.url-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  border-color: var(--focus);
+}
+.url-input[aria-invalid="true"] { border-color: var(--crit); }
+
+.input-hint, .input-error {
+  font-size: 13px;
+  margin-top: var(--sp-2);
+}
+.input-hint { color: var(--ink-2); }
+.input-error {
+  color: var(--crit);
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.input-error::before {
+  content: "!";
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px; height: 16px;
+  margin-top: 2px;
+  background: var(--crit);
+  color: var(--surface);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ─── Boutons ───────────────────────────────────────────────────── */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 22px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--r-md);
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--t-fast) ease, opacity var(--t-fast) ease,
+              box-shadow var(--t-fast) ease;
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+.btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.btn-primary:disabled { opacity: 0.55; cursor: progress; }
+.btn-primary .btn-arrow {
+  width: 17px; height: 17px;
+  transition: transform var(--t-mid) ease;
+}
+.btn-primary:hover:not(:disabled) .btn-arrow { transform: translateX(3px); }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  background: var(--surface);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: background-color var(--t-fast) ease, border-color var(--t-fast) ease,
+              color var(--t-fast) ease, transform var(--t-fast) ease;
+}
+.btn-ghost:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-strong);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+.btn-ghost:active { transform: translateY(0); }
+.btn-ghost svg { width: 15px; height: 15px; flex: none; }
+
+/* ─── Bandeau de confiance ──────────────────────────────────────── */
+
+.trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.trust-row li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.trust-row li::before {
+  content: "";
+  width: 5px; height: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--seal);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   6. Ecran de scan
+   ───────────────────────────────────────────────────────────────── */
+
+.loading { padding: var(--sp-7) 0 var(--sp-8); }
+
+.loading-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: var(--sp-5);
+}
+.loading-url {
+  color: var(--ink);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.progress {
+  height: 5px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  margin-bottom: var(--sp-5);
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0;
+  border-radius: var(--r-pill);
+  background: var(--seal);
+  transition: width var(--t-slow) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: 14.5px;
+  color: var(--ink-2);
+  opacity: 0.5;
+  transition: opacity var(--t-mid) ease, color var(--t-mid) ease;
+}
+
+.step-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  flex: none;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 50%;
+  transition: border-color var(--t-mid) ease, background-color var(--t-mid) ease;
+}
+
+/* Etape en cours : anneau ocre qui tourne. */
+.step.is-active { opacity: 1; color: var(--ink); }
+.step.is-active .step-mark {
+  border-color: var(--line);
+  border-top-color: var(--seal);
+  animation: spin 720ms linear infinite;
+}
+
+/* Etape terminee : coche sur fond vert. */
+.step.is-done { opacity: 1; color: var(--ink-2); }
+.step.is-done .step-mark {
+  border-color: var(--ok);
+  background: var(--ok);
+  animation: pop var(--t-mid) ease;
+}
+.step.is-done .step-mark::after {
+  content: "";
+  width: 9px; height: 5px;
+  margin-top: -2px;
+  border-left: 2px solid var(--surface);
+  border-bottom: 2px solid var(--surface);
+  transform: rotate(-45deg);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pop {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   7. Ecran d'erreur
+   ───────────────────────────────────────────────────────────────── */
+
+.error-panel {
+  margin: var(--sp-7) 0 var(--sp-8);
+  padding: var(--sp-6) var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--crit);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.error-glyph {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  margin: 0 auto var(--sp-4);
+  background: var(--crit-bg);
+  color: var(--crit);
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.error-title {
+  font-size: 19px;
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+
+.error-text {
+  color: var(--ink-2);
+  font-size: 14.5px;
+  max-width: 48ch;
+  margin: 0 auto var(--sp-5);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   8. Rapport — tampon et synthese
+   ───────────────────────────────────────────────────────────────── */
+
+.results { padding: var(--sp-5) 0 var(--sp-7); }
+
+.verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-5);
+  padding: var(--sp-6) var(--sp-5);
+  margin-bottom: var(--sp-6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+/* ─── Le tampon ─────────────────────────────────────────────────── */
+
+.stamp {
+  position: relative;
+  width: 172px;
+  height: 172px;
+  flex: none;
+  color: var(--seal);
+  transform: rotate(-2.5deg);
+}
+
+.stamp-svg { width: 100%; height: 100%; overflow: visible; }
+
+.stamp-edge {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  opacity: 0.45;
+}
+
+.stamp-ring-text {
+  fill: currentColor;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  opacity: 0.8;
+}
+
+/* La jauge : la piste est un ton clair de la meme rampe que le
+   remplissage, pour que l'etat se lise sur tout l'anneau. */
+.gauge-track {
+  fill: none;
+  stroke: var(--gauge-track, var(--paper-2));
+  stroke-width: 9;
+}
+
+.gauge-fill {
+  fill: none;
+  stroke: var(--gauge-fill, var(--seal));
+  stroke-width: 9;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 100px 100px;
+  /* Perimetre du cercle de rayon 62 : 2 * PI * 62 = 389.56 */
+  stroke-dasharray: 389.56;
+  stroke-dashoffset: 389.56;
+  transition: stroke-dashoffset 1100ms cubic-bezier(0.22, 1, 0.36, 1) 120ms,
+              stroke var(--t-mid) ease;
+}
+
+.stamp-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.stamp-grade {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--grade-color, var(--ink));
+}
+
+.stamp-score {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.stamp-score b { font-weight: 700; color: var(--ink); }
+.stamp-score-total { opacity: 0.8; }
+
+/* Effet de tampon appose sur le papier. */
+.stamp.is-stamped { animation: stamp-in 520ms cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+@keyframes stamp-in {
+  0%   { opacity: 0; transform: scale(1.55) rotate(-14deg); }
+  55%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1) rotate(-2.5deg); }
+}
+
+/* ─── Synthese ──────────────────────────────────────────────────── */
+
+.verdict-meta { min-width: 0; width: 100%; }
+
+.verdict-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: var(--sp-1);
+}
+
+.verdict-target {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 600;
+  word-break: break-all;
+  margin-bottom: var(--sp-2);
+}
+
+.verdict-sub {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin-bottom: var(--sp-5);
+}
+.verdict-sub b { color: var(--ink); }
+/* Ligne de date : collee a la ligne de note, la marge basse reste sur la date. */
+.verdict-sub:has(+ .verdict-date) { margin-bottom: var(--sp-1); }
+
+/* Bandeau de comptage : le glyphe et le libelle portent le sens,
+   la couleur ne fait que renforcer. */
+.tally {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+  text-align: left;
+}
+
+.tally-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.tally-glyph {
+  display: grid;
+  place-items: center;
+  width: 19px; height: 19px;
+  flex: none;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tally-count {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tally-item[data-niveau="CRITIQUE"]      .tally-glyph { background: var(--crit-bg); color: var(--crit); }
+.tally-item[data-niveau="AVERTISSEMENT"] .tally-glyph { background: var(--warn-bg); color: var(--warn); }
+.tally-item[data-niveau="INFO"]          .tally-glyph { background: var(--info-bg); color: var(--info); }
+.tally-item[data-niveau="OK"]            .tally-glyph { background: var(--ok-bg);   color: var(--ok); }
+
+/* Un compte non nul est souligne par un liseré de sa severite. */
+.tally-item.is-flagged[data-niveau="CRITIQUE"]      { border-color: var(--crit); }
+.tally-item.is-flagged[data-niveau="AVERTISSEMENT"] { border-color: var(--warn); }
+
+.download-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   9. Rapport — cartes repliables
+   ───────────────────────────────────────────────────────────────── */
+
+.modules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow var(--t-mid) ease, border-color var(--t-mid) ease;
+}
+.card:hover { box-shadow: var(--shadow-md); }
+
+/* Un filet de severite sur la tranche gauche rappelle l'etat de la carte. */
+.card[data-severity="CRITIQUE"]      { border-left: 3px solid var(--crit); }
+.card[data-severity="AVERTISSEMENT"] { border-left: 3px solid var(--warn); }
+.card[data-severity="INFO"]          { border-left: 3px solid var(--info); }
+.card[data-severity="OK"]            { border-left: 3px solid var(--ok); }
+
+/* Apparition en cascade des cartes. */
+.card.is-entering {
+  animation: card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.card-head-wrap { margin: 0; }
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-4);
+  text-align: left;
+  transition: background-color var(--t-fast) ease;
+}
+.card-head:hover { background: var(--surface-hover); }
+
+.card-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.card-counts {
+  display: flex;
+  gap: 5px;
+  flex: none;
+}
+
+.mini-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.mini-badge[data-niveau="CRITIQUE"]      { background: var(--crit-bg); color: var(--crit); }
+.mini-badge[data-niveau="AVERTISSEMENT"] { background: var(--warn-bg); color: var(--warn); }
+.mini-badge[data-niveau="INFO"]          { background: var(--info-bg); color: var(--info); }
+.mini-badge[data-niveau="OK"]            { background: var(--ok-bg);   color: var(--ok); }
+
+.chevron {
+  width: 17px; height: 17px;
+  flex: none;
+  color: var(--ink-2);
+  transition: transform var(--t-mid) ease;
+}
+.card.is-open .chevron { transform: rotate(180deg); }
+
+/* Le repli utilise grid-template-rows 0fr -> 1fr : le contenu garde
+   sa hauteur naturelle, ce qui permet d'imbriquer des blocs qui
+   s'ouvrent eux aussi sans recalcul de hauteur en JavaScript. */
+.card-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--t-mid) cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card.is-open .card-panel { grid-template-rows: 1fr; }
+
+.card-panel-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.card-body {
+  padding: 0 var(--sp-4) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.module-error {
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--crit-bg);
+  color: var(--crit);
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   10. Rapport — observations
+   ───────────────────────────────────────────────────────────────── */
+
+.obs {
+  padding: var(--sp-3) 0 0;
+  border-top: 1px solid var(--line);
+}
+.obs:first-child { border-top: none; padding-top: 0; }
+
+.obs-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: 6px;
+}
+
+/* Pastille de severite : glyphe + libelle, jamais la couleur seule. */
+.sev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  padding: 2px 8px 2px 4px;
+  border-radius: var(--r-pill);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.sev-glyph {
+  display: grid;
+  place-items: center;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: currentColor;
+  font-size: 10px;
+  line-height: 1;
+}
+.sev-glyph::before {
+  content: attr(data-glyph);
+  color: var(--surface);
+  font-weight: 700;
+}
+.obs[data-niveau="CRITIQUE"]      .sev-badge { background: var(--crit-bg); color: var(--crit); }
+.obs[data-niveau="AVERTISSEMENT"] .sev-badge { background: var(--warn-bg); color: var(--warn); }
+.obs[data-niveau="INFO"]          .sev-badge { background: var(--info-bg); color: var(--info); }
+.obs[data-niveau="OK"]            .sev-badge { background: var(--ok-bg);   color: var(--ok); }
+
+.obs-label {
+  font-size: 14.5px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+.obs-message {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin-bottom: var(--sp-2);
+}
+
+.obs-value {
+  display: block;
+  padding: 7px 10px;
+  margin-bottom: var(--sp-2);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+/* ─── Bloc explication / risque / correctif ─────────────────────── */
+
+.obs-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.detail-row { font-size: 13.5px; }
+
+.detail-tag {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 3px;
+}
+
+.detail-text { color: var(--ink); }
+.detail-row[data-kind="risque"] .detail-tag { color: var(--crit); }
+
+/* ─── Correctif copiable ────────────────────────────────────────── */
+
+.fix { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line); }
+
+.fix-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 6px 6px 6px 10px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.fix-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  padding: 4px 9px;
+  background: var(--surface);
+  color: var(--ink-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: background-color var(--t-fast) ease, color var(--t-fast) ease,
+              border-color var(--t-fast) ease;
+}
+.copy-btn:hover { color: var(--ink); border-color: var(--ink-2); }
+.copy-btn svg { width: 12px; height: 12px; }
+.copy-btn.is-copied {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.fix pre {
+  margin: 0;
+  padding: var(--sp-3);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  font-size: 12.5px;
+  line-height: 1.65;
+  overflow-x: auto;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   11. Pied de page
+   ───────────────────────────────────────────────────────────────── */
+
+.results-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--sp-6);
+}
+
+.page-footer {
+  padding: var(--sp-6) 0 var(--sp-5);
+  margin-top: var(--sp-6);
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+.page-footer b { color: var(--ink); }
+
+/* ─────────────────────────────────────────────────────────────────
+   10 bis. Audit partiel
+   Quand un module n'aboutit pas, reporter.py l'exclut du calcul : la
+   note ne porte alors que sur une partie des controles. L'encart le
+   dit juste sous le score, et la pastille marque les lignes
+   concernees dans les listes et tableaux.
+   ───────────────────────────────────────────────────────────────── */
+
+.avis-partiel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.avis-glyph {
+  display: grid;
+  place-items: center;
+  width: 19px; height: 19px;
+  flex: none;
+  margin-top: 1px;
+  background: var(--warn);
+  color: var(--surface);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Aucune note attribuee : le tampon reste neutre. Lui donner une
+   couleur de verdict reviendrait a en porter un. */
+.stamp-grade.is-absente {
+  font-size: 38px;
+  color: var(--ink-2);
+}
+
+.marque-partiel {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  cursor: help;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   11 bis. Navigation entre les deux pages
+   ───────────────────────────────────────────────────────────────── */
+
+.topbar-nav {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+}
+
+.nav-link {
+  padding: 5px 13px;
+  border-radius: var(--r-pill);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--t-fast) ease, color var(--t-fast) ease;
+}
+.nav-link:hover { color: var(--ink); }
+
+.nav-link.is-current {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Le libelle du bouton fantome est isole : le script remplace son
+   texte pendant la preparation du PDF sans toucher a l'icone. */
+.btn-ghost-label { white-space: nowrap; }
+
+.btn-ghost.is-accent {
+  border-color: var(--seal);
+  color: var(--seal);
+}
+.btn-ghost.is-accent:hover {
+  background: var(--seal-bg);
+  border-color: var(--seal);
+  color: var(--seal);
+}
+.btn-ghost:disabled {
+  opacity: 0.6;
+  cursor: progress;
+  transform: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   12. Adaptations : tablette (>= 640px)
+   ───────────────────────────────────────────────────────────────── */
+
+/* Sous 420 px, la barre haute passe sur deux lignes : la navigation
+   garde ainsi des cibles tactiles confortables. */
+@media (max-width: 419px) {
+  .topbar { flex-wrap: wrap; row-gap: var(--sp-3); }
+  .topbar-nav { order: 3; width: 100%; justify-content: center; }
+  .nav-link { flex: 1; text-align: center; }
+}
+
+@media (min-width: 640px) {
+  .page { padding: 0 var(--sp-6); }
+
+  .input-row { flex-direction: row; align-items: stretch; }
+  .url-input { flex: 1; min-width: 0; }
+  .btn-primary { flex: none; }
+
+  .verdict {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-6);
+    padding: var(--sp-6);
+    text-align: left;
+  }
+  .stamp { width: 188px; height: 188px; }
+  .download-row { justify-content: flex-start; }
+
+  .tally { grid-template-columns: repeat(4, 1fr); }
+  .tally-item { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .tally-glyph { margin-bottom: 2px; }
+
+  .card-body { padding: 0 var(--sp-5) var(--sp-5); }
+  .card-head { padding: var(--sp-4) var(--sp-5); }
+  .obs-detail { padding: var(--sp-4); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   13. Adaptations : bureau (>= 1024px)
+   ───────────────────────────────────────────────────────────────── */
+
+@media (min-width: 1024px) {
+  .page { max-width: 880px; }
+  .hero { padding: var(--sp-7) 0 var(--sp-8); }
+  .stamp { width: 200px; height: 200px; }
+  .stamp-grade { font-size: 52px; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   14. Mouvement reduit
+   Si le systeme demande moins d'animation, on retire tout ce qui
+   bouge et on garde uniquement les changements d'etat instantanes.
+   ───────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .stamp.is-stamped { animation: none; opacity: 1; transform: rotate(-2.5deg); }
+  .step.is-active .step-mark { animation: none; border-top-color: var(--seal); }
+  .btn-primary:hover:not(:disabled),
+  .btn-ghost:hover { transform: none; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   15. Impression — le rapport reste lisible sur papier
+   ───────────────────────────────────────────────────────────────── */
+
+@media print {
+  body { background: #fff; color: #000; }
+  .topbar, .download-row, .results-footer, .skip-link, .chevron { display: none; }
+  .card, .verdict { box-shadow: none; break-inside: avoid; }
+  .card-panel { grid-template-rows: 1fr !important; }
+  .fix pre { white-space: pre-wrap; }
+}

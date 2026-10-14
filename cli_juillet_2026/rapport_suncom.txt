@@ -1,0 +1,56 @@
+======================================================================
+        RAPPORT D'AUDIT DE SECURITE WEB - WebAudit
+======================================================================
+Cible analysee : https://suncom.app
+Date du scan   : 2026-07-06 18:41:42
+Duree du scan  : 3.82 secondes
+
+----------------------------------------------------------------------
+  SCORE DE SECURITE GLOBAL : D  (40/100)
+----------------------------------------------------------------------
+  Problemes critiques   : 2
+  Avertissements        : 2
+  Points conformes      : 6
+
+======================================================================
+  MODULE : En-tetes HTTP
+======================================================================
+  [!] Content-Security-Policy
+      En-tete absent. Recommandation : default-src 'self'
+  [+] Strict-Transport-Security
+      En-tete present.
+      Valeur : max-age=63072000
+  [!] X-Frame-Options
+      En-tete absent. Recommandation : DENY ou SAMEORIGIN
+  [~] X-Content-Type-Options
+      En-tete absent. Recommandation : nosniff
+  [~] Referrer-Policy
+      En-tete absent. Recommandation : strict-origin-when-cross-origin
+  [i] Permissions-Policy
+      En-tete absent. Recommandation : geolocation=(), microphone=(), camera=()
+  [i] Server
+      En-tete divulguant potentiellement des informations sensibles.
+      Valeur : Vercel
+
+======================================================================
+  MODULE : HTTPS / TLS
+======================================================================
+  [+] Disponibilite HTTPS
+      Le site est accessible en HTTPS.
+  [+] Validite du certificat
+      Certificat valide (expire le 2026-08-12, dans 37 jours). Emetteur : Let's Encrypt.
+  [+] Version du protocole TLS
+      Version TLS moderne et securisee (TLSv1.3).
+  [+] Redirection HTTP vers HTTPS
+      Le trafic HTTP est correctement redirige vers HTTPS.
+
+======================================================================
+  MODULE : Detection CMS
+======================================================================
+  [+] Identification du CMS
+      Aucun CMS standard detecte. Le site utilise probablement un developpement sur mesure.
+
+======================================================================
+  Rapport genere par WebAudit - Outil d'audit academique
+  Memoire L3 RT - Mourtalla LO - ESTM 2025-2026
+======================================================================

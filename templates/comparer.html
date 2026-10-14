@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparer plusieurs sites — WebAudit</title>
+<meta name="description" content="Auditez jusqu'à {{ max_urls }} sites à la suite et comparez leurs scores de sécurité dans un classement exportable en CSV.">
+<meta name="color-scheme" content="light dark">
+
+<!-- Applique le theme enregistre avant le premier rendu, pour eviter
+     un clignotement clair/sombre au chargement de la page. -->
+<script>
+  (function () {
+    try {
+      var choix = localStorage.getItem("webaudit-theme");
+      if (choix === "light" || choix === "dark") {
+        document.documentElement.setAttribute("data-theme", choix);
+      }
+    } catch (e) { /* localStorage indisponible : on suit les preferences systeme */ }
+  })();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='comparer.css') }}">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Aller au contenu</a>
+
+<div class="page page-large">
+
+  <header class="topbar">
+    <div class="wordmark">
+      <span class="wordmark-mark" aria-hidden="true">W</span>
+      <span class="wordmark-text">WebAudit</span>
+    </div>
+
+    <nav class="topbar-nav" aria-label="Navigation principale">
+      <a class="nav-link" href="/">Audit</a>
+      <a class="nav-link is-current" href="/comparer" aria-current="page">Comparer</a>
+    </nav>
+
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Activer le thème sombre">
+      <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2.6v2.2M12 19.2v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>
+      </svg>
+      <span class="theme-toggle-text" id="theme-toggle-text">Sombre</span>
+    </button>
+  </header>
+
+  <main id="main">
+
+    <!-- ============== Ecran 1 : saisie de la liste ============== -->
+    <section class="hero hero-compact" id="saisie-section" aria-labelledby="titre-comparer">
+      <p class="eyebrow">Audit comparatif</p>
+      <h1 id="titre-comparer">Comparez vos sites,<br>un classement en sortie.</h1>
+      <p class="hero-sub">
+        Jusqu'à {{ max_urls }} adresses, auditées l'une après l'autre. Vous obtenez
+        un classement par score, un graphique comparatif et un export CSV.
+      </p>
+
+      <!-- Avertissement ethique : visible avant toute saisie, pas replie. -->
+      <aside class="ethique" role="note">
+        <span class="ethique-glyph" aria-hidden="true">!</span>
+        <div>
+          <p class="ethique-titre">Avertissement</p>
+          <p>
+            Ne scannez que des sites dont vous avez l'autorisation ou des analyses
+            strictement passives (lecture des en-têtes publics).
+          </p>
+          <p class="ethique-detail">
+            WebAudit se limite à des requêtes publiques, comme un visiteur ordinaire :
+            aucune tentative d'intrusion, aucun test d'authentification, aucune
+            injection. Les scans s'enchaînent un par un, jamais en parallèle, afin de
+            ne pas peser sur les serveurs audités.
+          </p>
+        </div>
+      </aside>
+
+      <form id="liste-form" autocomplete="off" novalidate>
+        <div class="field">
+          <div class="field-head">
+            <label class="field-label" for="urls-input">Une adresse par ligne</label>
+            <span class="compteur" id="compteur-urls">0 / {{ max_urls }}</span>
+          </div>
+
+          <textarea
+            id="urls-input"
+            class="url-textarea"
+            rows="8"
+            spellcheck="false"
+            placeholder="exemple.com&#10;mon-site.sn&#10;https://autre-site.org"
+            aria-describedby="liste-hint"
+          ></textarea>
+
+          <p class="input-hint" id="liste-hint">
+            Les lignes vides sont ignorées. Maximum {{ max_urls }} adresses.
+          </p>
+          <p class="input-error" id="liste-error" role="alert" hidden></p>
+        </div>
+
+        <button type="submit" class="btn-primary" id="lancer-btn">
+          <span class="btn-label">Lancer la campagne</span>
+          <svg class="btn-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M5 12h13M12.5 5.5L19 12l-6.5 6.5"/>
+          </svg>
+        </button>
+      </form>
+    </section>
+
+    <!-- ============== Ecran 2 : campagne en cours ============== -->
+    <section class="loading" id="campagne-section" aria-labelledby="campagne-titre" hidden>
+      <h2 class="loading-title" id="campagne-titre">
+        Audit en cours — <span class="compteur-gros"><b id="fait">0</b> / <span id="total">0</span></span>
+      </h2>
+
+      <div class="progress"
+           role="progressbar"
+           id="campagne-progress"
+           aria-labelledby="campagne-titre"
+           aria-valuemin="0"
+           aria-valuemax="100"
+           aria-valuenow="0">
+        <div class="progress-bar" id="campagne-bar"></div>
+      </div>
+
+      <p class="campagne-cible">
+        En cours : <span class="loading-url" id="cible-courante">…</span>
+      </p>
+
+      <ol class="journal" id="journal"></ol>
+
+      <button type="button" class="btn-ghost" id="arreter-btn">Arrêter la campagne</button>
+
+      <p class="sr-only" id="campagne-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- ============== Ecran 3 : classement ============== -->
+    <section class="results" id="classement-section" aria-labelledby="classement-titre" hidden>
+
+      <div class="classement-head">
+        <div>
+          <p class="verdict-eyebrow">Résultat de la campagne</p>
+          <h2 class="classement-titre" id="classement-titre">
+            <span id="nb-sites">0</span> sites audités
+          </h2>
+          <p class="verdict-sub" id="classement-resume">—</p>
+        </div>
+        <div class="classement-actions">
+          <button type="button" class="btn-ghost is-accent" id="export-csv-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/></svg>
+            <span class="btn-ghost-label">Exporter en CSV</span>
+          </button>
+          <button type="button" class="btn-ghost" id="nouvelle-campagne-btn">Nouvelle campagne</button>
+        </div>
+      </div>
+
+      <!-- Signale les notes construites sur une mesure incomplete -->
+      <aside class="avis-partiel" id="avis-partiel" role="note" hidden>
+        <span class="avis-glyph" aria-hidden="true">~</span>
+        <p id="avis-partiel-texte"></p>
+      </aside>
+
+      <!-- Podium des trois meilleurs scores -->
+      <ol class="podium" id="podium" aria-label="Les trois meilleurs scores"></ol>
+
+      <!-- Graphique comparatif -->
+      <figure class="graphique">
+        <figcaption class="graphique-titre">
+          Score de sécurité par site
+          <span class="graphique-sous">sur 100 points, du plus élevé au plus faible</span>
+        </figcaption>
+
+        <!-- La couleur reprend la classe de note ; chaque barre porte
+             aussi sa lettre et sa valeur, pour ne jamais dépendre de la
+             seule teinte. -->
+        <ul class="legende" aria-hidden="true">
+          <li class="legende-item" data-niveau="OK"><span class="legende-puce"></span> A+ à B — conforme</li>
+          <li class="legende-item" data-niveau="AVERTISSEMENT"><span class="legende-puce"></span> C et D — à surveiller</li>
+          <li class="legende-item" data-niveau="CRITIQUE"><span class="legende-puce"></span> E et F — critique</li>
+        </ul>
+
+        <div class="barres" id="barres"></div>
+      </figure>
+
+      <!-- Tableau détaillé -->
+      <div class="tableau-enveloppe">
+        <table class="tableau" id="tableau">
+          <caption class="sr-only">Classement détaillé des sites audités</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="col-rang">#</th>
+              <th scope="col">Site</th>
+              <th scope="col" class="col-num">Score</th>
+              <th scope="col">Note</th>
+              <th scope="col" class="col-num">Critiques</th>
+              <th scope="col">HTTPS</th>
+              <th scope="col">CMS détecté</th>
+            </tr>
+          </thead>
+          <tbody id="tableau-corps"></tbody>
+        </table>
+      </div>
+
+      <!-- Sites dont l'audit n'a pas abouti -->
+      <div class="echecs" id="echecs" hidden>
+        <h3 class="echecs-titre">Adresses non auditées</h3>
+        <ul class="echecs-liste" id="echecs-liste"></ul>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="page-footer">
+    <p>
+      <b>WebAudit</b> — outil académique développé dans le cadre d'un mémoire de
+      fin de Licence 3 Réseaux et Télécommunications, ESTM 2025-2026.
+      Audit passif uniquement, à n'utiliser que sur des cibles dont vous êtes
+      responsable ou pour lesquelles vous disposez d'une autorisation écrite.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  // Borne transmise par le serveur, pour que les deux cotes restent d'accord.
+  window.MAX_URLS = {{ max_urls }};
+</script>
+<script src="{{ url_for('static', filename='commun.js') }}"></script>
+<script src="{{ url_for('static', filename='comparer.js') }}"></script>
+</body>
+</html>

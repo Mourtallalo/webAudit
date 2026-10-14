@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebAudit — Audit de sécurité web en une URL</title>
+<meta name="description" content="WebAudit contrôle les en-têtes HTTP de sécurité, le certificat HTTPS et le CMS d'un site web, puis remet un rapport noté de A+ à F.">
+<meta name="color-scheme" content="light dark">
+
+<!-- Applique le theme enregistre avant le premier rendu, pour eviter
+     un clignotement clair/sombre au chargement de la page. -->
+<script>
+  (function () {
+    try {
+      var choix = localStorage.getItem("webaudit-theme");
+      if (choix === "light" || choix === "dark") {
+        document.documentElement.setAttribute("data-theme", choix);
+      }
+    } catch (e) { /* localStorage indisponible : on suit les preferences systeme */ }
+  })();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<a class="skip-link" href="#main">Aller au contenu</a>
+
+<div class="page">
+
+  <header class="topbar">
+    <div class="wordmark">
+      <span class="wordmark-mark" aria-hidden="true">W</span>
+      <span class="wordmark-text">WebAudit</span>
+    </div>
+
+    <nav class="topbar-nav" aria-label="Navigation principale">
+      <a class="nav-link is-current" href="/" aria-current="page">Audit</a>
+      <a class="nav-link" href="/comparer">Comparer</a>
+    </nav>
+
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Activer le thème sombre">
+      <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2.6v2.2M12 19.2v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>
+      </svg>
+      <span class="theme-toggle-text" id="theme-toggle-text">Sombre</span>
+    </button>
+  </header>
+
+  <main id="main">
+
+    <!-- ============== Ecran 1 : saisie ============== -->
+    <section class="hero" id="hero-section" aria-labelledby="hero-title">
+      <p class="eyebrow">En-têtes HTTP · HTTPS / TLS · CMS</p>
+      <h1 id="hero-title">Un audit de sécurité,<br>en une URL.</h1>
+      <p class="hero-sub">
+        WebAudit contrôle en quelques secondes les trois faiblesses les plus
+        fréquentes d'un site web, et vous remet un rapport noté — avec le
+        correctif à appliquer, même sans connaissances techniques.
+      </p>
+
+      <form id="scan-form" autocomplete="off" novalidate>
+        <div class="field">
+          <label class="field-label" for="url-input">Adresse du site à auditer</label>
+          <div class="input-row">
+            <input
+              type="text"
+              id="url-input"
+              name="url"
+              class="url-input"
+              placeholder="exemple.com"
+              inputmode="url"
+              spellcheck="false"
+              aria-describedby="input-hint"
+              required
+            >
+            <button type="submit" class="btn-primary" id="scan-btn">
+              <span class="btn-label">Auditer</span>
+              <svg class="btn-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M5 12h13M12.5 5.5L19 12l-6.5 6.5"/>
+              </svg>
+            </button>
+          </div>
+          <p class="input-hint" id="input-hint">Exemple : exemple.com — ou une adresse complète https://…</p>
+          <p class="input-error" id="input-error" role="alert" hidden></p>
+        </div>
+      </form>
+
+      <ul class="trust-row">
+        <li>Audit passif, sans intrusion</li>
+        <li>Aucune donnée conservée</li>
+        <li>Résultat en ~3 secondes</li>
+      </ul>
+    </section>
+
+    <!-- ============== Ecran 2 : scan en cours ============== -->
+    <section class="loading" id="loading-section" aria-labelledby="loading-title" hidden>
+      <h2 class="loading-title" id="loading-title">
+        Audit de <span class="loading-url" id="loading-url">…</span>
+      </h2>
+
+      <div class="progress"
+           role="progressbar"
+           id="progress"
+           aria-labelledby="loading-title"
+           aria-valuemin="0"
+           aria-valuemax="100"
+           aria-valuenow="0">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <ol class="steps" id="steps">
+        <li class="step" data-step="headers">
+          <span class="step-mark" aria-hidden="true"></span>
+          <span class="step-label">Analyse des en-têtes…</span>
+        </li>
+        <li class="step" data-step="https">
+          <span class="step-mark" aria-hidden="true"></span>
+          <span class="step-label">Vérification HTTPS…</span>
+        </li>
+        <li class="step" data-step="cms">
+          <span class="step-mark" aria-hidden="true"></span>
+          <span class="step-label">Détection du CMS…</span>
+        </li>
+        <li class="step" data-step="rapport">
+          <span class="step-mark" aria-hidden="true"></span>
+          <span class="step-label">Compilation du rapport…</span>
+        </li>
+      </ol>
+
+      <p class="sr-only" id="loading-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- ============== Ecran 3 : erreur ============== -->
+    <section class="error-panel" id="error-section" aria-labelledby="error-title" hidden>
+      <span class="error-glyph" aria-hidden="true">!</span>
+      <h2 class="error-title" id="error-title">L'audit n'a pas abouti</h2>
+      <p class="error-text" id="error-text"></p>
+      <button type="button" class="btn-primary" id="error-retry">
+        <span class="btn-label">Réessayer</span>
+      </button>
+    </section>
+
+    <!-- ============== Ecran 4 : rapport ============== -->
+    <section class="results" id="results-section" aria-labelledby="results-title" hidden>
+
+      <h2 class="sr-only" id="results-title">Rapport d'audit</h2>
+
+      <div class="verdict">
+        <div class="stamp" id="stamp">
+          <svg class="stamp-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+            <defs>
+              <path id="stamp-ring-path"
+                    d="M 100,100 m -80,0 a 80,80 0 1,1 160,0 a 80,80 0 1,1 -160,0"/>
+            </defs>
+            <circle class="stamp-edge" cx="100" cy="100" r="96"/>
+            <circle class="gauge-track" cx="100" cy="100" r="62"/>
+            <circle class="gauge-fill" id="gauge-fill" cx="100" cy="100" r="62"/>
+            <text class="stamp-ring-text">
+              <textPath href="#stamp-ring-path" startOffset="0%">WEBAUDIT · RAPPORT D'AUDIT · WEBAUDIT · RAPPORT D'AUDIT ·</textPath>
+            </text>
+          </svg>
+          <div class="stamp-center">
+            <span class="stamp-grade" id="grade-letter">·</span>
+            <span class="stamp-score">
+              <b id="result-points">0</b><span class="stamp-score-total">/100</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="verdict-meta">
+          <p class="verdict-eyebrow">Cible auditée</p>
+          <p class="verdict-target" id="result-url">exemple.com</p>
+          <p class="verdict-sub">
+            Note <b id="result-note">·</b>
+            · <span id="result-points-text">0</span>/100 points
+            · scanné en <span id="result-duree">0</span> s
+          </p>
+          <p class="verdict-sub verdict-date">
+            Audité le <time id="result-date"></time>
+          </p>
+
+          <ul class="tally" id="tally">
+            <li class="tally-item" data-niveau="CRITIQUE">
+              <span class="tally-glyph" aria-hidden="true">!</span>
+              <b class="tally-count" id="tally-crit">0</b>
+              <span class="tally-label">critiques</span>
+            </li>
+            <li class="tally-item" data-niveau="AVERTISSEMENT">
+              <span class="tally-glyph" aria-hidden="true">~</span>
+              <b class="tally-count" id="tally-warn">0</b>
+              <span class="tally-label">avertissements</span>
+            </li>
+            <li class="tally-item" data-niveau="INFO">
+              <span class="tally-glyph" aria-hidden="true">i</span>
+              <b class="tally-count" id="tally-info">0</b>
+              <span class="tally-label">informations</span>
+            </li>
+            <li class="tally-item" data-niveau="OK">
+              <span class="tally-glyph" aria-hidden="true">✓</span>
+              <b class="tally-count" id="tally-ok">0</b>
+              <span class="tally-label">conformes</span>
+            </li>
+          </ul>
+
+          <div class="download-row">
+            <button type="button" class="btn-ghost is-accent" id="download-pdf-btn">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/></svg>
+              <span class="btn-ghost-label">Rapport PDF</span>
+            </button>
+            <button type="button" class="btn-ghost" id="download-txt-btn">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/></svg>
+              <span class="btn-ghost-label">Rapport .txt</span>
+            </button>
+            <button type="button" class="btn-ghost" id="download-json-btn">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/></svg>
+              <span class="btn-ghost-label">Données .json</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Signale que la note ne porte que sur les contrôles aboutis -->
+      <aside class="avis-partiel" id="avis-partiel" role="note" hidden>
+        <span class="avis-glyph" aria-hidden="true">~</span>
+        <p id="avis-partiel-texte"></p>
+      </aside>
+
+      <div class="modules" id="modules-container"></div>
+
+      <div class="results-footer">
+        <button type="button" class="btn-ghost" id="new-scan-btn">Auditer un autre site →</button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="page-footer">
+    <p>
+      <b>WebAudit</b> — outil académique développé dans le cadre d'un mémoire de
+      fin de Licence 3 Réseaux et Télécommunications, ESTM 2025-2026.
+      Audit passif uniquement, à n'utiliser que sur des cibles dont vous êtes
+      responsable ou pour lesquelles vous disposez d'une autorisation écrite.
+    </p>
+  </footer>
+
+</div>
+
+<p class="sr-only" id="copy-status" role="status" aria-live="polite"></p>
+
+<!-- Base de connaissances produite par fiches.py : l'interface et le
+     rapport PDF partagent ainsi la meme source d'explications. -->
+<script id="fiches-data" type="application/json">{{ fiches_json|safe }}</script>
+
+<script src="{{ url_for('static', filename='commun.js') }}"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
