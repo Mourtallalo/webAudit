@@ -109,6 +109,7 @@ def test_meme_resultat_ligne_de_commande_et_interface_web(modules_factices, tmp_
 
     assert set(cli) == set(web) == {
         "url", "url_finale", "redirections", "hote_tls", "statut", "motif",
+        "version_outil", "date_referentiel_cms",
         "date_scan", "duree", "score", "modules", "rapport_texte"}
     assert cli["url"] == web["url"] == URL
     assert cli["score"] == web["score"]

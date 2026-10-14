@@ -16,8 +16,9 @@ Le fichier JSON a exactement la structure de la réponse de /api/scan.
 
 AVERTISSEMENT ÉTHIQUE :
     Cet outil ne doit être utilisé que sur des systèmes pour lesquels vous
-    disposez d'une autorisation explicite. L'audit de systèmes tiers sans
-    autorisation est illégal (loi sénégalaise n° 2008-12 sur la cybercriminalité).
+    disposez d'une autorisation explicite. Auditer un système sans
+    l'autorisation de son propriétaire peut engager la responsabilité pénale
+    de son auteur (loi n°2008-11 du 25 janvier 2008 sur la cybercriminalité).
 
 Auteur : Mourtalla LO
 Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
@@ -29,6 +30,7 @@ import argparse
 
 from moteur import lancer_scan, normaliser_url
 from reporter import enregistrer_rapport
+from version import VERSION
 
 # Code de sortie quand la cible est injoignable (scan impossible).
 CODE_SCAN_IMPOSSIBLE = 2
@@ -49,7 +51,7 @@ def main(arguments_ligne=None):
 
     # --- Bannière ----------------------------------------------------------
     print("=" * 70)
-    print("   WebAudit 1.0 - Audit de sécurité web")
+    print("   WebAudit {} - Audit de sécurité web".format(VERSION))
     print("   Mémoire L3 RT - Mourtalla LO - ESTM 2025-2026")
     print("=" * 70)
     print("[*] Cible : {}".format(normaliser_url(arguments.url)))

@@ -13,10 +13,12 @@ Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
 """
 
 import json
+import textwrap
 from datetime import datetime
 
 from fiches import NOMS_MODULES
 from cms_detector import MENTION_REFERENTIEL
+from version import VERSION
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +137,7 @@ def _entete_rapport(url, duree, date_scan, url_finale, hote_tls):
     lignes.append("=" * largeur)
     lignes.append("        RAPPORT D'AUDIT DE SÉCURITÉ WEB - WebAudit")
     lignes.append("=" * largeur)
+    lignes.append("Outil          : WebAudit {}".format(VERSION))
     lignes.append("URL saisie     : {}".format(url))
     lignes.append("URL analysée   : {}".format(url_finale or "aucune (page non récupérée)"))
     lignes.append("Hôte TLS       : {}".format(hote_tls or "aucun (contrôle non effectué)"))
@@ -150,7 +153,7 @@ def _pied_rapport():
     largeur = LARGEUR_RAPPORT
     return [
         "=" * largeur,
-        "  Rapport généré par WebAudit - Outil d'audit académique",
+        "  Rapport généré par WebAudit {} - Outil d'audit académique".format(VERSION),
         "  Mémoire L3 RT - Mourtalla LO - ESTM 2025-2026",
         "=" * largeur,
     ]
@@ -198,7 +201,11 @@ def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_fina
     d = score["decompte"]
     lignes.append("  Problèmes critiques   : {}".format(d["CRITIQUE"]))
     lignes.append("  Avertissements        : {}".format(d["AVERTISSEMENT"]))
+    lignes.append("  Informations          : {}".format(d["INFO"]))
     lignes.append("  Points conformes      : {}".format(d["OK"]))
+    # Le lecteur peut recalculer le score à partir de ce seul résumé (C26) :
+    # 100 - 20 x critiques - 8 x avertissements - 2 x informations.
+    lignes.append("  Points                : {}/100".format(score["points"]))
 
     # Un audit partiel ne doit pas se lire comme un quitus : on le dit
     # juste sous le score, pas en note de bas de page.
@@ -235,12 +242,13 @@ def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_fina
             lignes.append("  {} {}".format(symbole, libelle))
             lignes.append("      {}".format(message))
 
-            # Pour les en-tetes presents, on affiche la valeur
+            # Pour les en-têtes présents, on affiche la valeur complète,
+            # repliée sur plusieurs lignes plutôt que tronquée (C26).
             if observation.get("present") and observation.get("valeur"):
-                valeur = observation["valeur"]
-                if len(valeur) > 60:
-                    valeur = valeur[:60] + "..."
-                lignes.append("      Valeur : {}".format(valeur))
+                lignes.extend(textwrap.wrap(
+                    str(observation["valeur"]), width=largeur,
+                    initial_indent="      Valeur : ", subsequent_indent=" " * 15,
+                    break_long_words=True, break_on_hyphens=False))
         lignes.append("")
 
     # --- Pied de page ------------------------------------------------------
@@ -262,7 +270,7 @@ def generer_rapport_json(url, resultats, score, duree):
             "cible": url,
             "date_scan": datetime.now().isoformat(),
             "duree_secondes": round(duree, 2),
-            "outil": "WebAudit 1.0",
+            "outil": "WebAudit {}".format(VERSION),
         },
         "score_global": score,
         "resultats_par_module": resultats,

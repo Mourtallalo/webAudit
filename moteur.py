@@ -27,6 +27,7 @@ from https_checker import verifier_https
 from cms_detector import detecter_cms_reponse
 from reporter import calculer_score, generer_rapport_texte, generer_rapport_impossible
 from reseau import recuperer_page, ErreurRecuperation
+from version import VERSION
 
 
 def normaliser_url(url):
@@ -59,8 +60,8 @@ def lancer_scan(url, timeout=10, autoriser_local=False):
     Retour
     ------
     dict : {url, url_finale, redirections, hote_tls, statut, motif,
-    date_scan, duree, score, modules, rapport_texte}, soit exactement la
-    réponse de /api/scan.
+    version_outil, date_referentiel_cms, date_scan, duree, score, modules,
+    rapport_texte}, soit exactement la réponse de /api/scan.
     """
     url = normaliser_url(url)
 
@@ -119,6 +120,8 @@ def lancer_scan(url, timeout=10, autoriser_local=False):
         "hote_tls": hote_tls,
         "statut": "complet" if score["complet"] else "partiel",
         "motif": None,
+        "version_outil": VERSION,
+        "date_referentiel_cms": cms_detector.REFERENTIEL["date_releve"],
         "date_scan": date_scan,
         "duree": duree,
         "score": score,
@@ -145,6 +148,8 @@ def _scan_impossible(url, erreur, debut, date_scan):
         "hote_tls": None,
         "statut": "impossible",
         "motif": erreur.motif,
+        "version_outil": VERSION,
+        "date_referentiel_cms": cms_detector.REFERENTIEL["date_releve"],
         "date_scan": date_scan,
         "duree": duree,
         "score": score,

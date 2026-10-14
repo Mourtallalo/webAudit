@@ -38,6 +38,7 @@ from reportlab.platypus import (
 )
 
 from fiches import FICHES, NOMS_MODULES
+from version import VERSION
 
 # ---------------------------------------------------------------------------
 # Palette : les memes teintes que l'interface web, en theme clair.
@@ -188,7 +189,7 @@ def _severite_de_la_note(note):
 # Blocs du document
 # ---------------------------------------------------------------------------
 
-def _entete(url, score, duree, moment):
+def _entete(url, score, duree, moment, url_finale=None, version_outil=None, date_referentiel=None):
     """Bandeau de tete : cible, date, note globale et decompte."""
     hote = str(url or "").replace("https://", "").replace("http://", "")
     decompte = score.get("decompte", {})
@@ -201,8 +202,15 @@ def _entete(url, score, duree, moment):
         Spacer(1, 6),
         _p("Date de l'audit : {}".format(moment.strftime("%d/%m/%Y à %H:%M")), S_META),
         _p("Durée du scan : {} secondes".format(duree), S_META),
-        _p("Outil : WebAudit 1.0 — analyse passive", S_META),
+        _p("URL analysée : {}".format(url_finale or "non indiquée"), S_META),
+        _p("Outil : WebAudit {} — analyse passive".format(version_outil or VERSION), S_META),
     ]
+    if date_referentiel:
+        try:
+            date_lisible = datetime.fromisoformat(str(date_referentiel)).strftime("%d/%m/%Y")
+        except ValueError:
+            date_lisible = str(date_referentiel)
+        identite.append(_p("Versions CMS : référence relevée le {}".format(date_lisible), S_META))
 
     bandeau = Table(
         [[identite, Tampon(score.get("note") or "—", score.get("points", 0), couleur)]],
@@ -406,7 +414,8 @@ def _habillage(canevas, doc):
 # Point d'entree
 # ---------------------------------------------------------------------------
 
-def generer_rapport_pdf(url, modules, score, duree, date_scan=None):
+def generer_rapport_pdf(url, modules, score, duree, date_scan=None, url_finale=None,
+                        version_outil=None, date_referentiel=None):
     """
     Construit le rapport PDF et retourne son contenu binaire.
 
@@ -417,6 +426,9 @@ def generer_rapport_pdf(url, modules, score, duree, date_scan=None):
     score : dict   {"points", "note", "decompte"}
     duree : float  duree du scan en secondes
     date_scan : str  horodatage ISO de l'audit (a defaut : maintenant)
+    url_finale : str     URL finale analysée après les redirections
+    version_outil : str  version de WebAudit qui a produit le scan
+    date_referentiel : str  date ISO du référentiel des versions CMS
 
     Retour
     ------
@@ -441,7 +453,7 @@ def generer_rapport_pdf(url, modules, score, duree, date_scan=None):
     )
 
     histoire = []
-    histoire.extend(_entete(url, score, duree, moment))
+    histoire.extend(_entete(url, score, duree, moment, url_finale, version_outil, date_referentiel))
 
     # --- Detail par categorie ----------------------------------------------
     histoire.append(_p("Détail par catégorie", S_SECTION))

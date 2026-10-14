@@ -116,7 +116,10 @@ def api_rapport_pdf():
         duree = 0
 
     try:
-        pdf = generer_rapport_pdf(url, modules, score, duree, data.get("date_scan"))
+        pdf = generer_rapport_pdf(url, modules, score, duree, data.get("date_scan"),
+                                  url_finale=data.get("url_finale"),
+                                  version_outil=data.get("version_outil"),
+                                  date_referentiel=data.get("date_referentiel_cms"))
     except Exception:
         app.logger.exception("Echec de la generation du rapport PDF")
         return jsonify({"erreur": "Le rapport PDF n'a pas pu etre genere."}), 500
