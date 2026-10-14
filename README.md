@@ -86,8 +86,21 @@ python scanner.py https://suncom.app --timeout 5
    détail des observations pour chacun des trois modules (en-têtes HTTP,
    HTTPS/TLS, CMS)
 
-Aucune donnée n'est enregistrée côté serveur : chaque scan est traité à la
-volée et le résultat n'existe que dans la page affichée au navigateur.
+### Historique des scans
+
+L'interface web conserve un historique des scans **sur l'ordinateur qui
+exécute `app.py`**, dans la base SQLite `instance/historique.db` (dossier
+ignoré par Git). Pour chaque scan abouti, elle enregistre : l'hôte, l'URL
+saisie, la date du scan, la note, les points, le décompte des quatre
+niveaux (critiques, avertissements, informations, conformes), l'indicateur
+« audit complet » et la version de l'outil. Rien d'autre : ni le détail
+des observations, ni la confirmation d'autorisation.
+
+- Un scan « impossible » n'est pas enregistré.
+- La ligne de commande n'écrit rien dans l'historique.
+- Sous le résultat, la section « Évolution du score pour cet hôte » trace
+  la courbe des points dès deux scans (`GET /api/history?url=…`).
+- **Pour tout effacer** : supprimer le fichier `instance/historique.db`.
 
 Seule l'interface web filtre les cibles (refus des adresses locales et
 privées, voir « Architecture technique ») ; la ligne de commande, lancée

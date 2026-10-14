@@ -20,6 +20,7 @@ from flask import Flask, render_template, request, jsonify, Response
 from moteur import lancer_scan, normaliser_url
 from reseau import valider_cible, forme_url_valide, MOTIF_NOM_INTROUVABLE
 from fiches import FICHES
+import historique
 from pdf_reporter import generer_rapport_pdf
 
 app = Flask(__name__)
@@ -72,12 +73,9 @@ def api_scan():
 
     url = normaliser_url(url_brute)
 
-    # Filtre anti-SSRF (reseau.valider_cible) : toutes les adresses résolues
-    # doivent être publiques. Un nom introuvable n'est pas refusé ici : le
-    # scan est alors déclaré « impossible » par le moteur (E15).
-    ok, motif = valider_cible(url)
-    if not ok and motif != MOTIF_NOM_INTROUVABLE:
-        return jsonify({"erreur": "Cible refusée : {}.".format(motif)}), 400
+    refus = _refus_cible(url)
+    if refus:
+        return refus
 
     # Le scan lui-même est confié au moteur commun (moteur.py), partagé
     # avec la ligne de commande (scanner.py).
@@ -86,7 +84,51 @@ def api_scan():
     except Exception as e:
         return jsonify({"erreur": "Erreur inattendue pendant le scan : {}".format(str(e))}), 500
 
+    # C01 : historique des scans aboutis. Un scan « impossible » n'est pas
+    # enregistré, et une erreur d'écriture ne fait jamais échouer le scan.
+    if resultat.get("statut") != "impossible":
+        try:
+            historique.enregistrer_scan(resultat)
+        except Exception:
+            app.logger.exception("Échec de l'enregistrement dans l'historique")
+
     return jsonify(resultat)
+
+
+@app.route("/api/history", methods=["GET"])
+def api_history():
+    """
+    Historique des scans d'un hôte, du plus ancien au plus récent (C01).
+
+    Paramètre : ?url=exemple.com (même validation qu'à /api/scan).
+    Réponse : {"hote": ..., "scans": [...]}.
+    """
+    url_brute = request.args.get("url", "")
+    if not url_brute.strip():
+        return jsonify({"erreur": "Merci de saisir une URL."}), 400
+
+    url = normaliser_url(url_brute)
+    refus = _refus_cible(url)
+    if refus:
+        return refus
+
+    return jsonify({"hote": historique.hote_de(url), "scans": historique.historique_pour(url)})
+
+
+def _refus_cible(url):
+    """
+    Filtre anti-SSRF (reseau.valider_cible) : toutes les adresses résolues
+    doivent être publiques. Un nom introuvable n'est pas refusé ici : le
+    scan est alors déclaré « impossible » par le moteur (E15).
+
+    Retour
+    ------
+    None si la cible est acceptée, sinon la réponse d'erreur 400.
+    """
+    ok, motif = valider_cible(url)
+    if not ok and motif != MOTIF_NOM_INTROUVABLE:
+        return jsonify({"erreur": "Cible refusée : {}.".format(motif)}), 400
+    return None
 
 
 @app.route("/api/rapport-pdf", methods=["POST"])

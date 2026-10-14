@@ -48,6 +48,14 @@ def dns(monkeypatch):
     return table
 
 
+@pytest.fixture(autouse=True)
+def base_historique(tmp_path, monkeypatch):
+    """Chaque test écrit dans sa propre base d'historique, jamais dans instance/."""
+    import historique
+    monkeypatch.setattr(historique, "_chemin", None)
+    return historique.initialiser(str(tmp_path / "historique.db"))
+
+
 class ServeurLocal:
     """Serveur HTTP dans un thread ; routes : chemin -> (code, en-têtes, corps)."""
 

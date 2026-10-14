@@ -1146,6 +1146,27 @@ main { flex: 1; }
    11. Pied de page
    ───────────────────────────────────────────────────────────────── */
 
+/* Évolution du score (historique, C01) */
+.historique {
+  margin-top: var(--sp-6);
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.historique-titre {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 var(--sp-3);
+}
+.historique-vide { font-size: 13.5px; color: var(--ink-2); margin: 0; }
+.courbe { display: block; width: 100%; height: auto; }
+.courbe-grille { stroke: var(--line); stroke-width: 1; }
+.courbe-etiquette { fill: var(--ink-2); font-size: 13px; }
+.courbe-ligne { fill: none; stroke: var(--focus); stroke-width: 2; }
+.courbe-point { fill: var(--surface); stroke: var(--focus); stroke-width: 2; cursor: default; }
+.courbe-point:hover { fill: var(--focus); }
+
 .results-footer {
   display: flex;
   justify-content: center;

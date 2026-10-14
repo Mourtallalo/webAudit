@@ -100,7 +100,7 @@
 
       <ul class="trust-row">
         <li>Audit passif, sans intrusion</li>
-        <li>Aucune donnée conservée</li>
+        <li>Historique des scans conservé sur cet ordinateur</li>
         <li>Résultat en ~3 secondes</li>
       </ul>
     </section>
@@ -239,6 +239,12 @@
       </aside>
 
       <div class="modules" id="modules-container"></div>
+
+      <!-- C01 : évolution du score, d'après l'historique (GET /api/history) -->
+      <section class="historique" id="historique" aria-labelledby="historique-titre" hidden>
+        <h3 class="historique-titre" id="historique-titre">Évolution du score pour cet hôte</h3>
+        <div id="historique-contenu"></div>
+      </section>
 
       <div class="results-footer">
         <button type="button" class="btn-ghost" id="new-scan-btn">Auditer un autre site →</button>

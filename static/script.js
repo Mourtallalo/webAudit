@@ -479,6 +479,116 @@ function afficherResultats(data) {
   // Le tampon et la jauge s'animent apres l'affichage de la section,
   // sinon la transition demarre sur un element encore masque.
   requestAnimationFrame(() => poserTampon(data.score));
+
+  afficherHistorique(data.url);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   9 bis. Évolution du score (historique, C01)
+   ═══════════════════════════════════════════════════════════════ */
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function elementSvg(nom, attributs) {
+  const el = document.createElementNS(SVG_NS, nom);
+  Object.entries(attributs || {}).forEach(([cle, valeur]) => el.setAttribute(cle, valeur));
+  return el;
+}
+
+function dateCourte(iso) {
+  const moment = new Date(iso);
+  return moment.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function dateLongue(iso) {
+  const moment = new Date(iso);
+  return dateCourte(iso) + " à " +
+    moment.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+/**
+ * Courbe SVG simple : dates en abscisse (à l'échelle du temps), points
+ * sur 100 en ordonnée. Chaque point porte sa valeur et sa date dans un
+ * <title>, affiché au survol.
+ */
+function construireCourbe(scans) {
+  const L = 420, H = 200;
+  const marge = { gauche: 36, droite: 12, haut: 14, bas: 34 };
+  const largeur = L - marge.gauche - marge.droite;
+  const hauteur = H - marge.haut - marge.bas;
+
+  const temps = scans.map((s) => new Date(s.date_scan).getTime());
+  const tMin = Math.min(...temps);
+  const tMax = Math.max(...temps);
+  const x = (i) => marge.gauche + (tMax > tMin
+    ? (temps[i] - tMin) / (tMax - tMin) * largeur
+    : i / (scans.length - 1) * largeur);
+  const y = (points) => marge.haut + (1 - Math.max(0, Math.min(100, points)) / 100) * hauteur;
+
+  const svg = elementSvg("svg", {
+    class: "courbe", viewBox: "0 0 " + L + " " + H, role: "img",
+    "aria-label": "Évolution du score sur " + scans.length + " scans",
+  });
+
+  // Graduations horizontales : 0, 50 et 100 points.
+  [0, 50, 100].forEach((valeur) => {
+    svg.appendChild(elementSvg("line", {
+      class: "courbe-grille", x1: marge.gauche, x2: L - marge.droite, y1: y(valeur), y2: y(valeur),
+    }));
+    const etiquette = elementSvg("text", {
+      class: "courbe-etiquette", x: marge.gauche - 8, y: y(valeur) + 4, "text-anchor": "end",
+    });
+    etiquette.textContent = String(valeur);
+    svg.appendChild(etiquette);
+  });
+
+  // Dates du premier et du dernier scan sous l'axe.
+  [[0, "start"], [scans.length - 1, "end"]].forEach(([i, ancre]) => {
+    const etiquette = elementSvg("text", {
+      class: "courbe-etiquette", x: x(i), y: H - 10, "text-anchor": ancre,
+    });
+    etiquette.textContent = dateCourte(scans[i].date_scan);
+    svg.appendChild(etiquette);
+  });
+
+  svg.appendChild(elementSvg("polyline", {
+    class: "courbe-ligne",
+    points: scans.map((s, i) => x(i).toFixed(1) + "," + y(s.points).toFixed(1)).join(" "),
+  }));
+
+  scans.forEach((s, i) => {
+    const point = elementSvg("circle", { class: "courbe-point", cx: x(i), cy: y(s.points), r: 4.5 });
+    const titre = elementSvg("title");
+    titre.textContent = dateLongue(s.date_scan) + " : " + s.points + "/100"
+      + (s.note ? " (" + s.note + ")" : " (note non attribuée)");
+    point.appendChild(titre);
+    svg.appendChild(point);
+  });
+
+  return svg;
+}
+
+async function afficherHistorique(url) {
+  const section = $("historique");
+  const contenu = $("historique-contenu");
+  contenu.innerHTML = "";
+  section.hidden = true;
+
+  try {
+    const reponse = await fetch("/api/history?url=" + encodeURIComponent(url));
+    if (!reponse.ok) return;
+    const data = await reponse.json();
+    const scans = (data.scans || []).filter((s) => typeof s.points === "number");
+
+    if (scans.length >= 2) {
+      contenu.appendChild(construireCourbe(scans));
+    } else {
+      contenu.appendChild(creer("p", "historique-vide", "Premier scan enregistré pour cet hôte"));
+    }
+    section.hidden = false;
+  } catch (err) {
+    // L'historique est un complément : son absence ne gêne pas le rapport.
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
