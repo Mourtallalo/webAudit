@@ -1,14 +1,14 @@
 """
 headers_analyzer.py
 ===================
-Module d'analyse des en-tetes HTTP de securite.
+Module d'analyse des en-têtes HTTP de sécurité.
 
-Ce module analyse la presence des en-tetes de securite recommandes par
-l'OWASP dans une reponse HTTP deja obtenue (reseau.recuperer_page) : la
-page n'est demandee qu'une seule fois pour tout le scan (E42).
+Ce module analyse la présence des en-têtes de sécurité recommandés par
+l'OWASP dans une réponse HTTP déjà obtenue (reseau.recuperer_page) : la
+page n'est demandée qu'une seule fois pour tout le scan (E42).
 
 Auteur : Mourtalla LO
-Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
+Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
 """
 
 import re
@@ -29,12 +29,12 @@ MESSAGE_AVEC_VERSION = "En-tête divulguant un numéro de version du logiciel."
 
 
 # ---------------------------------------------------------------------------
-# Definition des en-tetes de securite verifies et de leur criticite
+# Définition des en-têtes de sécurité vérifiés et de leur criticité
 # ---------------------------------------------------------------------------
-# Chaque en-tete est associe a :
+# Chaque en-tête est associé à :
 #   - une description de son role
-#   - un niveau de criticite s'il est absent (CRITIQUE, AVERTISSEMENT, INFO)
-#   - une valeur recommandee (a titre indicatif)
+#   - un niveau de criticité s'il est absent (CRITIQUE, AVERTISSEMENT, INFO)
+#   - une valeur recommandée (à titre indicatif)
 SECURITY_HEADERS = {
     "Content-Security-Policy": {
         "role": "Protège contre les attaques XSS en contrôlant les sources de contenu autorisées.",
@@ -83,9 +83,9 @@ def analyser_headers_reponse(reponse):
     dict
         Un dictionnaire structure contenant :
           - "statut"       : "succes" ou "erreur"
-          - "message"      : message d'erreur eventuel
-          - "observations" : liste des observations par en-tete
-          - "headers_bruts": dictionnaire des en-tetes recus
+          - "message"      : message d'erreur éventuel
+          - "observations" : liste des observations par en-tête
+          - "headers_bruts": dictionnaire des en-têtes reçus
     """
     resultat = {
         "module": NOM_MODULE,
@@ -95,17 +95,17 @@ def analyser_headers_reponse(reponse):
         "headers_bruts": {},
     }
 
-    # On normalise les noms d'en-tetes recus en minuscules pour comparer
+    # On normalise les noms d'en-têtes reçus en minuscules pour comparer
     headers_recus = {cle.lower(): valeur for cle, valeur in reponse.headers.items()}
     resultat["headers_bruts"] = dict(reponse.headers)
 
     csp = headers_recus.get("content-security-policy", "")
 
-    # --- Verification de chaque en-tete de securite ------------------------
+    # --- Vérification de chaque en-tête de sécurité ------------------------
     for nom_header, infos in SECURITY_HEADERS.items():
         cle = nom_header.lower()
         if cle in headers_recus:
-            # En-tete present : on enregistre une observation positive
+            # En-tête présent : on enregistre une observation positive
             observation = {
                 "header": nom_header,
                 "present": True,
@@ -126,7 +126,7 @@ def analyser_headers_reponse(reponse):
                 "message": MESSAGE_FRAME_ANCESTORS,
             }
         else:
-            # En-tete absent : on enregistre une observation selon la criticite
+            # En-tête absent : on enregistre une observation selon la criticité
             observation = {
                 "header": nom_header,
                 "present": False,
@@ -137,7 +137,7 @@ def analyser_headers_reponse(reponse):
             }
         resultat["observations"].append(observation)
 
-    # --- Detection d'en-tetes qui exposent trop d'informations -------------
+    # --- Détection d'en-têtes qui exposent trop d'informations -------------
     # Les en-têtes Server et X-Powered-By ne sont pénalisés (INFO) que s'ils
     # divulguent un numéro de version (E33) ; sinon, observation OK.
     for header_sensible in ["server", "x-powered-by"]:

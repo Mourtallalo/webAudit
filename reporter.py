@@ -1,15 +1,15 @@
 """
 reporter.py
 ===========
-Module de generation des rapports de scan.
+Module de génération des rapports de scan.
 
-Ce module agrege les resultats des differents modules d'analyse, calcule
-un score de securite global (de A+ a F) et produit deux formats de sortie :
+Ce module agrège les résultats des différents modules d'analyse, calcule
+un score de sécurité global (de A+ à F) et produit deux formats de sortie :
   - un rapport texte lisible pour l'utilisateur
-  - un rapport JSON structure pour une exploitation automatisee
+  - un rapport JSON structuré pour une exploitation automatisée
 
 Auteur : Mourtalla LO
-Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
+Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
 """
 
 import json
@@ -22,9 +22,9 @@ from version import VERSION
 
 
 # ---------------------------------------------------------------------------
-# Ponderation des niveaux de criticite pour le calcul du score
+# Pondération des niveaux de criticité pour le calcul du score
 # ---------------------------------------------------------------------------
-# Chaque observation retire un certain nombre de points selon sa gravite.
+# Chaque observation retire un certain nombre de points selon sa gravité.
 PENALITES = {
     "CRITIQUE": 20,
     "AVERTISSEMENT": 8,
@@ -32,9 +32,9 @@ PENALITES = {
     "OK": 0,
 }
 
-# Symboles utilises dans le rapport texte
+# Symboles utilisés dans le rapport texte
 SYMBOLES = {
-    "CRITIQUE": "[!]",   # probleme grave
+    "CRITIQUE": "[!]",   # problème grave
     "AVERTISSEMENT": "[~]",  # point d'attention
     "INFO": "[i]",       # information
     "OK": "[+]",         # conforme
@@ -43,42 +43,42 @@ SYMBOLES = {
 
 def calculer_score(resultats):
     """
-    Calcule un score de securite global a partir de l'ensemble des observations.
+    Calcule un score de sécurité global à partir de l'ensemble des observations.
 
-    Principe : on ne note que ce qui a pu etre mesure.
+    Principe : on ne note que ce qui a pu être mesuré.
 
-    Un module qui n'a pas abouti — cible injoignable, delai depasse — ne
-    produit aucune observation. Le penaliser d'un forfait reviendrait a
-    noter une absence de mesure comme si c'etait un constat, et le
-    forfait serait toujours arbitraire : dans la version precedente, un
-    module d'en-tetes en echec coutait 20 points, alors que le meme
-    module, s'il avait repondu sur un site mal configure, en aurait
-    coute pres de 80. Un site injoignable obtenait donc une meilleure
-    note qu'un site reellement audite et defaillant, ce qui rendait les
+    Un module qui n'a pas abouti — cible injoignable, délai dépassé — ne
+    produit aucune observation. Le pénaliser d'un forfait reviendrait à
+    noter une absence de mesure comme si c'était un constat, et le
+    forfait serait toujours arbitraire : dans la version précédente, un
+    module d'en-têtes en échec coûtait 20 points, alors que le même
+    module, s'il avait répondu sur un site mal configuré, en aurait
+    coûté près de 80. Un site injoignable obtenait donc une meilleure
+    note qu'un site réellement audité et défaillant, ce qui rendait les
     scores incomparables entre eux.
 
-    Le module en echec est donc exclu du calcul et declare comme tel.
+    Le module en échec est donc exclu du calcul et déclaré comme tel.
     Mais exclure ne suffit pas : le score restant monterait alors
-    mecaniquement, et une lettre posee dessus ferait passer un audit
-    incomplet pour un bon resultat. La note est donc retiree — elle
+    mécaniquement, et une lettre posée dessus ferait passer un audit
+    incomplet pour un bon résultat. La note est donc retirée — elle
     vaut None — des qu'un module manque. Une lettre est un jugement
-    d'ensemble : on ne peut pas resumer ce qu'on n'a pas mesure. Les
-    points restent fournis, comme mesure partielle a interpreter avec
+    d'ensemble : on ne peut pas résumer ce qu'on n'a pas mesuré. Les
+    points restent fournis, comme mesure partielle à interpréter avec
     la liste des modules absents.
 
-    Parametres
+    Paramètres
     ----------
     resultats : list
-        Liste des dictionnaires retournes par chaque module.
+        Liste des dictionnaires retournés par chaque module.
 
     Retour
     ------
     dict avec :
-      - 'points'   : score sur 100, calcule sur les modules aboutis
-      - 'note'     : la lettre correspondante (A+ a F), ou None si
+      - 'points'   : score sur 100, calculé sur les modules aboutis
+      - 'note'     : la lettre correspondante (A+ à F), ou None si
                      l'audit est partiel
-      - 'decompte' : nombre d'observations par niveau de gravite
-      - 'complet'  : False des qu'un module n'a pas abouti
+      - 'decompte' : nombre d'observations par niveau de gravité
+      - 'complet'  : False dès qu'un module n'a pas abouti
       - 'modules_non_executes' : la liste de ces modules
     """
     score = 100
@@ -119,7 +119,7 @@ def calculer_score(resultats):
     return {
         "points": score,
         # Pas de lettre sur un audit incomplet : voir l'explication en
-        # tete de fonction.
+        # tête de fonction.
         "note": note if complet else None,
         "decompte": decompte,
         "complet": complet,
@@ -180,11 +180,11 @@ def generer_rapport_impossible(url, motif, duree, date_scan=None, url_finale=Non
 
 def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_finale=None, hote_tls=None):
     """
-    Produit un rapport texte formate et lisible.
+    Produit un rapport texte formaté et lisible.
 
     Retour
     ------
-    str : le rapport complet pret a etre affiche ou enregistre.
+    str : le rapport complet prêt à être affiché ou enregistré.
     """
     largeur = LARGEUR_RAPPORT
     lignes = _entete_rapport(url, duree, date_scan, url_finale, hote_tls)
@@ -217,11 +217,11 @@ def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_fina
         lignes.append("  Relancez l'audit avant de conclure.")
     lignes.append("")
 
-    # --- Detail par module -------------------------------------------------
+    # --- Détail par module -------------------------------------------------
     for module in resultats:
         lignes.append("=" * largeur)
-        # La cle "module" reste sans accent (elle sert d'identifiant) :
-        # on affiche le libelle lisible correspondant.
+        # La clé "module" reste sans accent (elle sert d'identifiant) :
+        # on affiche le libellé lisible correspondant.
         lignes.append("  MODULE : {}".format(
             NOMS_MODULES.get(module["module"], module["module"])))
         lignes.append("=" * largeur)
@@ -235,7 +235,7 @@ def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_fina
             niveau = observation.get("niveau", "INFO")
             symbole = SYMBOLES.get(niveau, "[?]")
 
-            # Selon le module, la cle du libelle differe
+            # Selon le module, la clé du libellé diffère
             libelle = observation.get("header") or observation.get("critere") or "Observation"
             message = observation.get("message", "")
 
@@ -263,7 +263,7 @@ def generer_rapport_json(url, resultats, score, duree):
 
     Retour
     ------
-    str : le rapport au format JSON indente.
+    str : le rapport au format JSON indenté.
     """
     rapport = {
         "metadonnees": {

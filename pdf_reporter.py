@@ -1,19 +1,19 @@
 """
 pdf_reporter.py
 ===============
-Generation du rapport d'audit au format PDF.
+Génération du rapport d'audit au format PDF.
 
-Ce module reprend les resultats produits par les modules d'analyse et
-les met en page dans un document imprimable : en-tete, note globale,
-detail par categorie, puis recommandations chiffrees.
+Ce module reprend les résultats produits par les modules d'analyse et
+les met en page dans un document imprimable : en-tête, note globale,
+détail par catégorie, puis recommandations chiffrées.
 
-Il ne realise aucune analyse : il ne fait que mettre en forme ce que
-reporter.py a deja calcule.
+Il ne réalise aucune analyse : il ne fait que mettre en forme ce que
+reporter.py a déjà calculé.
 
-Dependance : reportlab (voir requirements.txt).
+Dépendance : reportlab (voir requirements.txt).
 
 Auteur : Mourtalla LO
-Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
+Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
 """
 
 import textwrap
@@ -41,8 +41,8 @@ from fiches import FICHES, NOMS_MODULES
 from version import VERSION
 
 # ---------------------------------------------------------------------------
-# Palette : les memes teintes que l'interface web, en theme clair.
-# Les contrastes ont ete verifies au niveau AA sur fond papier.
+# Palette : les mêmes teintes que l'interface web, en thème clair.
+# Les contrastes ont été vérifiés au niveau AA sur fond papier.
 # ---------------------------------------------------------------------------
 ENCRE = colors.HexColor("#15140F")
 ENCRE_DOUCE = colors.HexColor("#56524A")
@@ -78,7 +78,7 @@ SEVERITES = {
     },
 }
 
-# Marges et largeur utile, utilisees pour caler les tableaux.
+# Marges et largeur utile, utilisées pour caler les tableaux.
 MARGE = 18 * mm
 LARGEUR_UTILE = A4[0] - 2 * MARGE
 
@@ -128,7 +128,7 @@ S_CODE = ParagraphStyle(
 
 
 def _p(texte, style):
-    """Paragraphe dont le texte est echappe : les donnees viennent du scan."""
+    """Paragraphe dont le texte est échappé : les données viennent du scan."""
     return Paragraph(escape(str(texte or "")), style)
 
 
@@ -170,11 +170,11 @@ class Tampon(Flowable):
 
 def _severite_de_la_note(note):
     """
-    A+/A/B : conforme - C/D : a surveiller - E/F : critique.
+    A+/A/B : conforme - C/D : à surveiller - E/F : critique.
 
     reporter.py ne pose aucune lettre quand l'audit est partiel : le
-    resultat est alors neutre, et None signale qu'aucune couleur de
-    verdict ne doit etre appliquee.
+    résultat est alors neutre, et None signale qu'aucune couleur de
+    verdict ne doit être appliquée.
     """
     if not note:
         return None
@@ -190,7 +190,7 @@ def _severite_de_la_note(note):
 # ---------------------------------------------------------------------------
 
 def _entete(url, score, duree, moment, url_finale=None, version_outil=None, date_referentiel=None):
-    """Bandeau de tete : cible, date, note globale et decompte."""
+    """Bandeau de tête : cible, date, note globale et décompte."""
     hote = str(url or "").replace("https://", "").replace("http://", "")
     decompte = score.get("decompte", {})
     severite = _severite_de_la_note(score.get("note"))
@@ -224,7 +224,7 @@ def _entete(url, score, duree, moment, url_finale=None, version_outil=None, date
         ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
     ]))
 
-    # Ligne de decompte par niveau de gravite.
+    # Ligne de décompte par niveau de gravité.
     cellules, styles = [], [
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("TOPPADDING", (0, 0), (-1, -1), 7),
@@ -275,7 +275,7 @@ def _entete(url, score, duree, moment, url_finale=None, version_outil=None, date
 
 
 def _tableau_module(module):
-    """Tableau recapitulatif des observations d'un module."""
+    """Tableau récapitulatif des observations d'un module."""
     lignes = [[
         _p("Gravité", S_ETIQUETTE),
         _p("Contrôle", S_ETIQUETTE),
@@ -313,18 +313,18 @@ def _tableau_module(module):
         ])
         styles.append(("BACKGROUND", (0, i), (0, i), info["fond"]))
 
-    # 90 pt pour la gravite : assez pour que "[~] À SURVEILLER" tienne
-    # sur une seule ligne et que la colonne garde une hauteur reguliere.
+    # 90 pt pour la gravité : assez pour que "[~] À SURVEILLER" tienne
+    # sur une seule ligne et que la colonne garde une hauteur régulière.
     tableau = Table(lignes, colWidths=[90, 122, LARGEUR_UTILE - 212], repeatRows=1)
     tableau.setStyle(TableStyle(styles))
     return tableau
 
 
 def _bloc_code(code):
-    """Encadre un extrait de configuration, replie pour tenir dans la page."""
+    """Encadre un extrait de configuration, replié pour tenir dans la page."""
     lignes = []
     for ligne in str(code).split("\n"):
-        # Courier 7.4 pt : environ 95 caracteres dans la largeur utile.
+        # Courier 7.4 pt : environ 95 caractères dans la largeur utile.
         lignes.extend(textwrap.wrap(ligne, width=95, subsequent_indent="    ",
                                     break_long_words=True, break_on_hyphens=False)
                       or [""])
@@ -378,12 +378,12 @@ def _recommandation(obs, numero):
         blocs.append(_p("Bon à savoir : {}".format(fiche["note"]), S_CORPS_DOUX))
 
     blocs.append(Spacer(1, 10))
-    # KeepTogether evite qu'un correctif soit coupe entre deux pages.
+    # KeepTogether évite qu'un correctif soit coupé entre deux pages.
     return KeepTogether(blocs)
 
 
 def _habillage(canevas, doc):
-    """Filet de tete et pied de page, repetes sur chaque page."""
+    """Filet de tête et pied de page, répétés sur chaque page."""
     canevas.saveState()
 
     canevas.setStrokeColor(FILET)
@@ -411,7 +411,7 @@ def _habillage(canevas, doc):
 
 
 # ---------------------------------------------------------------------------
-# Point d'entree
+# Point d'entrée
 # ---------------------------------------------------------------------------
 
 def generer_rapport_pdf(url, modules, score, duree, date_scan=None, url_finale=None,
@@ -419,23 +419,23 @@ def generer_rapport_pdf(url, modules, score, duree, date_scan=None, url_finale=N
     """
     Construit le rapport PDF et retourne son contenu binaire.
 
-    Parametres
+    Paramètres
     ----------
-    url : str      adresse auditee
-    modules : list resultats renvoyes par les modules d'analyse
+    url : str      adresse auditée
+    modules : list résultats renvoyés par les modules d'analyse
     score : dict   {"points", "note", "decompte"}
-    duree : float  duree du scan en secondes
-    date_scan : str  horodatage ISO de l'audit (a defaut : maintenant)
+    duree : float  durée du scan en secondes
+    date_scan : str  horodatage ISO de l'audit (à défaut : maintenant)
     url_finale : str     URL finale analysée après les redirections
     version_outil : str  version de WebAudit qui a produit le scan
     date_referentiel : str  date ISO du référentiel des versions CMS
 
     Retour
     ------
-    bytes : le PDF pret a etre envoye au navigateur.
+    bytes : le PDF prêt à être envoyé au navigateur.
     """
     # La date vient du client : une valeur absente ou illisible ne doit pas
-    # empecher la mise en page, on retombe alors sur l'heure courante.
+    # empêcher la mise en page, on retombe alors sur l'heure courante.
     try:
         moment = datetime.fromisoformat(str(date_scan))
     except (TypeError, ValueError):
@@ -455,7 +455,7 @@ def generer_rapport_pdf(url, modules, score, duree, date_scan=None, url_finale=N
     histoire = []
     histoire.extend(_entete(url, score, duree, moment, url_finale, version_outil, date_referentiel))
 
-    # --- Detail par categorie ----------------------------------------------
+    # --- Détail par catégorie ----------------------------------------------
     histoire.append(_p("Détail par catégorie", S_SECTION))
 
     for module in modules:

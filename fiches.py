@@ -1,25 +1,25 @@
 """
 fiches.py
 =========
-Base de connaissances pedagogique du scanner.
+Base de connaissances pédagogique du scanner.
 
-Pour chaque controle effectue par les modules d'analyse, ce fichier
-fournit l'explication destinee a l'utilisateur, le risque concret, et
-le ou les correctifs a appliquer.
+Pour chaque contrôle effectué par les modules d'analyse, ce fichier
+fournit l'explication destinée à l'utilisateur, le risque concret, et
+le ou les correctifs à appliquer.
 
-Ce fichier est l'unique source : l'interface web le recoit en JSON
-(injecte dans la page par app.py) et le generateur de rapport PDF
-l'importe directement. Une seule liste a tenir a jour.
+Ce fichier est l'unique source : l'interface web le reçoit en JSON
+(injecté dans la page par app.py) et le générateur de rapport PDF
+l'importe directement. Une seule liste à tenir à jour.
 
-Les cles correspondent exactement aux libelles produits par les
-modules d'analyse : la cle "header" pour headers_analyzer, la cle
+Les clés correspondent exactement aux libellés produits par les
+modules d'analyse : la clé "header" pour headers_analyzer, la clé
 "critere" pour https_checker et cms_detector. Accents compris : un
-libelle affiche a l'ecran sert aussi de cle ici, donc les deux doivent
-etre modifies ensemble. La fonction verifier_couverture(), en bas de
-ce fichier, controle que rien n'a ete oublie.
+libellé affiché à l'écran sert aussi de clé ici, donc les deux doivent
+être modifiés ensemble. La fonction verifier_couverture(), en bas de
+ce fichier, contrôle que rien n'a été oublié.
 
 Auteur : Mourtalla LO
-Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
+Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
 """
 
 RECHARGER_NGINX = "sudo nginx -t && sudo systemctl reload nginx"
@@ -260,7 +260,7 @@ FICHES = {
 }
 
 
-# Noms d'affichage des modules, partages par l'interface et le PDF.
+# Noms d'affichage des modules, partagés par l'interface et le PDF.
 NOMS_MODULES = {
     "En-tetes HTTP": "En-têtes HTTP de sécurité",
     "HTTPS / TLS": "HTTPS et certificat TLS",
@@ -270,9 +270,9 @@ NOMS_MODULES = {
 
 def fiche_pour(observation):
     """
-    Retourne la fiche correspondant a une observation, ou None.
+    Retourne la fiche correspondant à une observation, ou None.
 
-    Une observation porte son libelle dans "header" (module en-tetes)
+    Une observation porte son libellé dans "header" (module en-têtes)
     ou dans "critere" (modules HTTPS et CMS).
     """
     libelle = observation.get("header") or observation.get("critere")
@@ -281,17 +281,17 @@ def fiche_pour(observation):
 
 def libelles_sans_fiche(resultats):
     """
-    Liste les libelles non conformes qui n'ont pas de fiche associee.
+    Liste les libellés non conformes qui n'ont pas de fiche associée.
 
-    Sert de garde-fou : le libelle affiche a l'ecran est aussi la cle
+    Sert de garde-fou : le libellé affiché à l'écran est aussi la clé
     de ce fichier, donc une correction de texte faite ici ou dans un
     module d'analyse sans l'autre casse silencieusement l'affichage du
-    correctif. Passer le resultat d'un scan a cette fonction le
+    correctif. Passer le résultat d'un scan à cette fonction le
     signale tout de suite.
 
     Retour
     ------
-    list : les libelles orphelins, tries et dedoublonnes.
+    list : les libellés orphelins, triés et dédoublonnés.
     """
     manquants = set()
     for module in resultats:
@@ -306,15 +306,15 @@ def libelles_sans_fiche(resultats):
 
 def verifier_couverture_headers():
     """
-    Controle que chaque en-tete surveille par headers_analyzer a sa fiche.
+    Contrôle que chaque en-tête surveillé par headers_analyzer a sa fiche.
 
-    Seul ce module expose la liste de ce qu'il verifie. Les criteres de
-    https_checker et cms_detector dependent de la reponse de la cible :
-    pour ceux-la, utilisez libelles_sans_fiche() sur un resultat de scan.
+    Seul ce module expose la liste de ce qu'il vérifie. Les critères de
+    https_checker et cms_detector dépendent de la réponse de la cible :
+    pour ceux-là, utilisez libelles_sans_fiche() sur un résultat de scan.
 
     Retour
     ------
-    list : les en-tetes sans fiche, tries.
+    list : les en-têtes sans fiche, triés.
     """
     from headers_analyzer import SECURITY_HEADERS
 

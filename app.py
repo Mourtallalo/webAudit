@@ -3,12 +3,12 @@ app.py
 ======
 Application web Flask pour WebAudit.
 
-Sert une interface web permettant de lancer un audit de securite sur
-une URL et d'afficher le rapport genere par les modules existants
+Sert une interface web permettant de lancer un audit de sécurité sur
+une URL et d'afficher le rapport généré par les modules existants
 (headers_analyzer, https_checker, cms_detector, reporter).
 
 Auteur : Mourtalla LO
-Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
+Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
 """
 
 import json
@@ -24,17 +24,17 @@ from pdf_reporter import generer_rapport_pdf
 
 app = Flask(__name__)
 
-# Delai maximum (secondes) accorde a chaque requete reseau du scanner
+# Délai maximum (secondes) accordé à chaque requête réseau du scanner
 TIMEOUT = 10
 
-# Nombre maximum d'URL acceptees par la page de comparaison. Les scans y
-# sont enchaines un par un : cette borne evite de lancer une campagne
-# interminable, et limite la charge imposee aux serveurs audites.
+# Nombre maximum d'URL acceptées par la page de comparaison. Les scans y
+# sont enchaînés un par un : cette borne évite de lancer une campagne
+# interminable, et limite la charge imposée aux serveurs audités.
 MAX_URLS_COMPARAISON = 30
 
-# La base de connaissances est injectee telle quelle dans les pages.
-# On neutralise le chevron ouvrant : sans cela, la sequence </script>
-# qui pourrait apparaitre dans un correctif fermerait la balise.
+# La base de connaissances est injectée telle quelle dans les pages.
+# On neutralise le chevron ouvrant : sans cela, la séquence </script>
+# qui pourrait apparaître dans un correctif fermerait la balise.
 FICHES_JSON = json.dumps(FICHES, ensure_ascii=False).replace("<", "\\u003c")
 
 
@@ -46,7 +46,7 @@ def index():
 
 @app.route("/comparer")
 def comparer():
-    """Page de comparaison : plusieurs sites audites l'un apres l'autre."""
+    """Page de comparaison : plusieurs sites audités l'un après l'autre."""
     return render_template("comparer.html", max_urls=MAX_URLS_COMPARAISON)
 
 
@@ -85,13 +85,13 @@ def api_scan():
 @app.route("/api/rapport-pdf", methods=["POST"])
 def api_rapport_pdf():
     """
-    Met en page un rapport deja produit et le renvoie au format PDF.
+    Met en page un rapport déjà produit et le renvoie au format PDF.
 
-    Le client renvoie le resultat que /api/scan lui a donne : on ne
-    relance pas le scan, pour que le PDF corresponde exactement a ce que
+    Le client renvoie le résultat que /api/scan lui a donné : on ne
+    relance pas le scan, pour que le PDF corresponde exactement à ce que
     l'utilisateur a sous les yeux.
 
-    Corps attendu : la reponse complete de /api/scan.
+    Corps attendu : la réponse complète de /api/scan.
     """
     data = request.get_json(silent=True) or {}
 
@@ -106,7 +106,7 @@ def api_rapport_pdf():
         return jsonify({"erreur": "Scan impossible : aucun rapport PDF à produire."}), 400
 
     # Les modules sont relus depuis le client : on ne garde que les
-    # dictionnaires, pour ne pas faire echouer la mise en page sur une
+    # dictionnaires, pour ne pas faire échouer la mise en page sur une
     # structure inattendue.
     modules = [m for m in modules if isinstance(m, dict)]
 
@@ -136,9 +136,9 @@ def api_rapport_pdf():
 
 if __name__ == "__main__":
     import os
-    # Mode debug desactive par defaut : de bonnes pratiques de securite
-    # imposent de ne jamais exposer le debogueur Flask par defaut, a plus
-    # forte raison pour un outil d'audit de securite. Activer explicitement
-    # avec FLASK_DEBUG=1 pendant le developpement si necessaire.
+    # Mode debug désactivé par défaut : de bonnes pratiques de sécurité
+    # imposent de ne jamais exposer le débogueur Flask par défaut, à plus
+    # forte raison pour un outil d'audit de sécurité. Activer explicitement
+    # avec FLASK_DEBUG=1 pendant le développement si nécessaire.
     debug_active = os.environ.get("FLASK_DEBUG", "0") == "1"
     app.run(debug=debug_active, host="127.0.0.1", port=5000)
