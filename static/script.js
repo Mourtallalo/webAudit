@@ -495,6 +495,11 @@ async function lancerScan(url) {
     if (!reponse.ok) {
       throw new Error(data.erreur || "Une erreur est survenue pendant l'audit.");
     }
+    // Cible injoignable : ni points ni note, seulement le motif (E15).
+    if (data.statut === "impossible") {
+      throw new Error("Scan impossible : " + data.motif
+                      + ". Aucun point ni aucune note ne sont attribués.");
+    }
 
     terminerCompilation();
     loadingStatus.textContent = "Audit terminé.";

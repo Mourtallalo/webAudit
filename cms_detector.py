@@ -7,14 +7,19 @@ Ce module analyse le code source HTML d'une page ainsi que certains fichiers
 caracteristiques afin d'identifier le CMS utilise (WordPress, Joomla, Drupal)
 et de determiner si sa version est potentiellement obsolete.
 
+La page est celle deja obtenue par reseau.recuperer_page : elle n'est
+demandee qu'une seule fois pour tout le scan (E42).
+
 Auteur : Mourtalla LO
 Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
 """
 
 import re
 
-import requests
 from bs4 import BeautifulSoup
+
+
+NOM_MODULE = "Detection CMS"
 
 
 # ---------------------------------------------------------------------------
@@ -91,35 +96,24 @@ def detecter_version_generique(html, nom_cms):
     return None
 
 
-def detecter_cms(url, timeout=10):
+def detecter_cms_reponse(reponse):
     """
-    Fonction principale du module : identifie le CMS et evalue son obsolescence.
+    Fonction principale du module : identifie le CMS et évalue son obsolescence
+    à partir d'une réponse déjà obtenue (requests.Response).
 
     Retour
     ------
     dict structure comme les autres modules du scanner.
     """
     resultat = {
-        "module": "Detection CMS",
+        "module": NOM_MODULE,
         "statut": "succes",
         "message": "",
         "observations": [],
         "details": {},
     }
 
-    # --- Recuperation du code source de la page ----------------------------
-    try:
-        reponse = requests.get(
-            url,
-            timeout=timeout,
-            headers={"User-Agent": "WebAudit/1.0"},
-            allow_redirects=True,
-        )
-        html = reponse.text
-    except requests.exceptions.RequestException as e:
-        resultat["statut"] = "erreur"
-        resultat["message"] = "Impossible de récupérer le contenu : {}".format(e)
-        return resultat
+    html = reponse.text
 
     cms_detecte = None
     indices_trouves = []
@@ -193,13 +187,3 @@ def detecter_cms(url, timeout=10):
         })
 
     return resultat
-
-
-# ---------------------------------------------------------------------------
-# Test unitaire du module
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    import json
-    # WordPress.org est lui-meme sous WordPress : bon cas de test
-    test = detecter_cms("https://wordpress.org/")
-    print(json.dumps(test, indent=2, ensure_ascii=False))

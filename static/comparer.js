@@ -179,6 +179,8 @@ async function scannerUne(adresse) {
     });
     const data = await reponse.json();
     if (!reponse.ok) throw new Error(data.erreur || "Audit impossible.");
+    // Cible injoignable : ni points ni note, le site rejoint les échecs (E15).
+    if (data.statut === "impossible") throw new Error("Scan impossible : " + data.motif);
     return data;
   } finally {
     requeteEnCours = null;

@@ -89,6 +89,23 @@ Seule l'interface web filtre les cibles (refus des adresses locales et
 privées, voir « Architecture technique ») ; la ligne de commande, lancée
 par l'auditeur sur son propre poste, ne les filtre pas.
 
+### Issue d'un scan
+
+Le champ `statut` du JSON (et l'en-tête du rapport texte) indique :
+
+- `complet` : les trois modules ont abouti ; points et note (A+ à F) ;
+- `partiel` : la cible répond mais un module n'a pas abouti ; des points,
+  sans note ;
+- `impossible` : la page n'a pas pu être récupérée (nom de domaine
+  introuvable, connexion refusée, délai dépassé, erreur TLS) ; ni points
+  ni note, et le champ `motif` explique pourquoi. La ligne de commande se
+  termine alors avec le code de sortie 2.
+
+Le JSON et le rapport texte indiquent aussi l'URL saisie (`url`), l'URL
+finale analysée après les redirections (`url_finale`, avec le parcours
+complet dans `redirections`) et l'hôte interrogé par le contrôle TLS
+(`hote_tls`).
+
 ### Tests
 
 ```bash
@@ -108,6 +125,7 @@ webaudit_web/
 ├── app.py                 # Application Flask (routes / et /api/scan)
 ├── scanner.py             # Ligne de commande
 ├── moteur.py              # Moteur d'analyse commun (lancer_scan)
+├── reseau.py              # Filtre anti-SSRF et requête partagée
 ├── headers_analyzer.py    # Module d'analyse des en-têtes HTTP (existant)
 ├── https_checker.py       # Module de vérification HTTPS/TLS (existant)
 ├── cms_detector.py        # Module de détection du CMS (existant)
@@ -136,14 +154,29 @@ L'application suit une architecture classique client-serveur :
   HTML/CSS/JavaScript vanilla (aucun framework), qui envoie une requête
   `fetch()` à `/api/scan` et construit dynamiquement le rapport dans le DOM.
 
-Une validation basique anti-SSRF rejette les cibles locales ou privées
-(`localhost`, `127.0.0.1`, plages `192.168.x.x` et `10.x.x.x`) pour éviter
-tout usage détourné de l'outil comme sonde du réseau interne du serveur.
+Un filtre anti-SSRF (`reseau.valider_cible`) évite tout usage détourné de
+l'interface web comme sonde du réseau interne du serveur. Il résout le nom
+d'hôte (toutes les adresses IPv4 et IPv6) et refuse la cible si une seule
+adresse n'est pas publique : privée, boucle locale, lien local (dont
+`169.254.169.254`), multidiffusion, réservée, non spécifiée, IPv6 privée
+(`fc00::/7`) ou lien local (`fe80::/10`), adresse IPv4 mappée en IPv6. Le
+filtre porte sur les adresses, pas sur le nom : `10.exemple.com` est
+accepté s'il pointe vers une adresse publique, `localtest.me` est refusé
+parce qu'il pointe vers `127.0.0.1`.
+
+La page est demandée une seule fois par scan (`reseau.recuperer_page`).
+Les redirections sont suivies à la main (5 au maximum) et chaque nouvelle
+adresse est revalidée par le même filtre.
 
 ---
 
 ## Limites connues
 
+- **Rebinding DNS** : entre la validation DNS du filtre anti-SSRF et la
+  connexion elle-même, un nom peut changer d'adresse (un serveur DNS
+  malveillant peut répondre une adresse publique au filtre, puis une
+  adresse interne au moment de la connexion). Le filtre réduit ce risque
+  sans le supprimer.
 - Le serveur de développement Flask (`app.run(debug=True)`) n'est pas conçu
   pour la production. Pour un déploiement réel, utiliser un serveur WSGI
   comme Gunicorn derrière un reverse proxy (Nginx).

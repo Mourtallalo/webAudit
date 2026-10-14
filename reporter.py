@@ -124,7 +124,56 @@ def calculer_score(resultats):
     }
 
 
-def generer_rapport_texte(url, resultats, score, duree, date_scan=None):
+LARGEUR_RAPPORT = 70
+
+
+def _entete_rapport(url, duree, date_scan, url_finale, hote_tls):
+    """En-tête commun aux rapports texte : cible, URL finale (C18), date, durée."""
+    largeur = LARGEUR_RAPPORT
+    lignes = []
+    lignes.append("=" * largeur)
+    lignes.append("        RAPPORT D'AUDIT DE SÉCURITÉ WEB - WebAudit")
+    lignes.append("=" * largeur)
+    lignes.append("URL saisie     : {}".format(url))
+    lignes.append("URL analysée   : {}".format(url_finale or "aucune (page non récupérée)"))
+    lignes.append("Hôte TLS       : {}".format(hote_tls or "aucun (contrôle non effectué)"))
+    moment = datetime.fromisoformat(date_scan) if date_scan else datetime.now()
+    lignes.append("Date du scan   : {}".format(moment.strftime("%d/%m/%Y à %H:%M:%S")))
+    lignes.append("Durée du scan  : {:.2f} secondes".format(duree))
+    lignes.append("")
+    return lignes
+
+
+def _pied_rapport():
+    largeur = LARGEUR_RAPPORT
+    return [
+        "=" * largeur,
+        "  Rapport généré par WebAudit - Outil d'audit académique",
+        "  Mémoire L3 RT - Mourtalla LO - ESTM 2025-2026",
+        "=" * largeur,
+    ]
+
+
+def generer_rapport_impossible(url, motif, duree, date_scan=None, url_finale=None):
+    """
+    Rapport texte d'un scan impossible (E15) : la cible est injoignable.
+
+    Aucun point ni aucune note : rien n'a pu être mesuré.
+    """
+    largeur = LARGEUR_RAPPORT
+    lignes = _entete_rapport(url, duree, date_scan, url_finale, None)
+    lignes.append("-" * largeur)
+    lignes.append("  SCAN IMPOSSIBLE : {}".format(motif))
+    lignes.append("-" * largeur)
+    lignes.append("  La page n'a pas pu être récupérée : aucun contrôle n'a été")
+    lignes.append("  effectué. Aucun point ni aucune note ne sont attribués.")
+    lignes.append("  Vérifiez l'adresse saisie, puis relancez l'audit.")
+    lignes.append("")
+    lignes.extend(_pied_rapport())
+    return "\n".join(lignes)
+
+
+def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_finale=None, hote_tls=None):
     """
     Produit un rapport texte formate et lisible.
 
@@ -132,17 +181,8 @@ def generer_rapport_texte(url, resultats, score, duree, date_scan=None):
     ------
     str : le rapport complet pret a etre affiche ou enregistre.
     """
-    lignes = []
-    largeur = 70
-
-    lignes.append("=" * largeur)
-    lignes.append("        RAPPORT D'AUDIT DE SÉCURITÉ WEB - WebAudit")
-    lignes.append("=" * largeur)
-    lignes.append("Cible analysée : {}".format(url))
-    moment = datetime.fromisoformat(date_scan) if date_scan else datetime.now()
-    lignes.append("Date du scan   : {}".format(moment.strftime("%d/%m/%Y à %H:%M:%S")))
-    lignes.append("Durée du scan  : {:.2f} secondes".format(duree))
-    lignes.append("")
+    largeur = LARGEUR_RAPPORT
+    lignes = _entete_rapport(url, duree, date_scan, url_finale, hote_tls)
 
     # --- Score global ------------------------------------------------------
     lignes.append("-" * largeur)
@@ -202,10 +242,7 @@ def generer_rapport_texte(url, resultats, score, duree, date_scan=None):
         lignes.append("")
 
     # --- Pied de page ------------------------------------------------------
-    lignes.append("=" * largeur)
-    lignes.append("  Rapport généré par WebAudit - Outil d'audit académique")
-    lignes.append("  Mémoire L3 RT - Mourtalla LO - ESTM 2025-2026")
-    lignes.append("=" * largeur)
+    lignes.extend(_pied_rapport())
 
     return "\n".join(lignes)
 

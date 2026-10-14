@@ -18,7 +18,10 @@ import socket
 from datetime import datetime
 from urllib.parse import urlparse
 
-import requests
+from reseau import recuperer_page, ErreurRecuperation
+
+
+NOM_MODULE = "HTTPS / TLS"
 
 
 def _extraire_hote(url):
@@ -27,9 +30,12 @@ def _extraire_hote(url):
     return analyse.hostname or url.replace("https://", "").replace("http://", "").split("/")[0]
 
 
-def verifier_redirection_https(hote, timeout=10):
+def verifier_redirection_https(hote, timeout=10, autoriser_local=False):
     """
-    Verifie si une connexion HTTP est automatiquement redirigee vers HTTPS.
+    Vérifie si une connexion HTTP est automatiquement redirigée vers HTTPS.
+
+    La requête passe par reseau.recuperer_page : chaque redirection est
+    revalidée par le filtre anti-SSRF (E39).
 
     Retour
     ------
@@ -37,20 +43,16 @@ def verifier_redirection_https(hote, timeout=10):
     """
     info = {"http_accessible": False, "redirige_vers_https": False, "url_finale": None}
     try:
-        reponse = requests.get(
-            "http://{}".format(hote),
-            timeout=timeout,
-            allow_redirects=True,
-            headers={"User-Agent": "WebAudit/1.0"},
-        )
+        reponse, parcours = recuperer_page("http://{}".format(hote), timeout, autoriser_local)
+        reponse.close()
         info["http_accessible"] = True
-        info["url_finale"] = reponse.url
+        info["url_finale"] = parcours[-1]
         # Si l'URL finale commence par https, la redirection a eu lieu
-        if reponse.url.lower().startswith("https://"):
+        if parcours[-1].lower().startswith("https://"):
             info["redirige_vers_https"] = True
-    except requests.exceptions.RequestException:
-        # Le site n'est pas accessible en HTTP simple (ce qui n'est pas un probleme)
-        pass
+    except ErreurRecuperation as e:
+        # Le site n'est pas accessible en HTTP simple (ce qui n'est pas un problème)
+        info["erreur"] = e.motif
     return info
 
 
@@ -117,7 +119,7 @@ def analyser_certificat(hote, port=443, timeout=10):
     return info_cert
 
 
-def verifier_https(url, timeout=10):
+def verifier_https(url, timeout=10, autoriser_local=False):
     """
     Fonction principale du module : combine la verification de la redirection
     et l'analyse du certificat, puis produit des observations classifiees.
@@ -128,7 +130,7 @@ def verifier_https(url, timeout=10):
     """
     hote = _extraire_hote(url)
     resultat = {
-        "module": "HTTPS / TLS",
+        "module": NOM_MODULE,
         "statut": "succes",
         "message": "",
         "observations": [],
@@ -137,8 +139,8 @@ def verifier_https(url, timeout=10):
 
     # --- Analyse du certificat TLS -----------------------------------------
     cert = analyser_certificat(hote, timeout=timeout)
-    redirection = verifier_redirection_https(hote, timeout=timeout)
-    resultat["details"] = {"certificat": cert, "redirection": redirection}
+    redirection = verifier_redirection_https(hote, timeout=timeout, autoriser_local=autoriser_local)
+    resultat["details"] = {"hote_tls": hote, "certificat": cert, "redirection": redirection}
 
     # --- Observation 1 : HTTPS est-il actif ? ------------------------------
     if cert["https_actif"]:
@@ -212,12 +214,3 @@ def verifier_https(url, timeout=10):
             })
 
     return resultat
-
-
-# ---------------------------------------------------------------------------
-# Test unitaire du module
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    import json
-    test = verifier_https("https://www.google.com")
-    print(json.dumps(test, indent=2, ensure_ascii=False))

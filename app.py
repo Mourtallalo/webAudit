@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 from flask import Flask, render_template, request, jsonify, Response
 
 from moteur import lancer_scan, normaliser_url
+from reseau import valider_cible, forme_url_valide, MOTIF_NOM_INTROUVABLE
 from fiches import FICHES
 from pdf_reporter import generer_rapport_pdf
 
@@ -35,23 +36,6 @@ MAX_URLS_COMPARAISON = 30
 # On neutralise le chevron ouvrant : sans cela, la sequence </script>
 # qui pourrait apparaitre dans un correctif fermerait la balise.
 FICHES_JSON = json.dumps(FICHES, ensure_ascii=False).replace("<", "\\u003c")
-
-
-def url_valide(url):
-    """Validation minimale : un hote avec au moins un point, pas d'espaces."""
-    try:
-        analyse = urlparse(url)
-        if not analyse.hostname:
-            return False
-        if " " in url:
-            return False
-        # Rejette les hotes locaux/prives pour eviter les abus (SSRF basique)
-        hote = analyse.hostname.lower()
-        if hote in ("localhost", "127.0.0.1", "0.0.0.0") or hote.startswith("192.168.") or hote.startswith("10."):
-            return False
-        return bool(re.match(r"^[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$", hote))
-    except Exception:
-        return False
 
 
 @app.route("/")
@@ -81,8 +65,12 @@ def api_scan():
 
     url = normaliser_url(url_brute)
 
-    if not url_valide(url):
-        return jsonify({"erreur": "Cette URL ne semble pas valide. Verifiez le format (ex. suncom.app)."}), 400
+    # Filtre anti-SSRF (reseau.valider_cible) : toutes les adresses résolues
+    # doivent être publiques. Un nom introuvable n'est pas refusé ici : le
+    # scan est alors déclaré « impossible » par le moteur (E15).
+    ok, motif = valider_cible(url)
+    if not ok and motif != MOTIF_NOM_INTROUVABLE:
+        return jsonify({"erreur": "Cible refusée : {}.".format(motif)}), 400
 
     # Le scan lui-même est confié au moteur commun (moteur.py), partagé
     # avec la ligne de commande (scanner.py).
@@ -111,8 +99,11 @@ def api_rapport_pdf():
     modules = data.get("modules")
     score = data.get("score")
 
-    if not url_valide(url) or not isinstance(modules, list) or not isinstance(score, dict):
+    if not forme_url_valide(url) or not isinstance(modules, list) or not isinstance(score, dict):
         return jsonify({"erreur": "Rapport incomplet ou invalide."}), 400
+
+    if data.get("statut") == "impossible":
+        return jsonify({"erreur": "Scan impossible : aucun rapport PDF à produire."}), 400
 
     # Les modules sont relus depuis le client : on ne garde que les
     # dictionnaires, pour ne pas faire echouer la mise en page sur une

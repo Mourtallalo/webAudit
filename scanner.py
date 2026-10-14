@@ -30,6 +30,9 @@ import argparse
 from moteur import lancer_scan, normaliser_url
 from reporter import enregistrer_rapport
 
+# Code de sortie quand la cible est injoignable (scan impossible).
+CODE_SCAN_IMPOSSIBLE = 2
+
 
 def main(arguments_ligne=None):
     """Fonction principale : gestion des arguments et orchestration du scan."""
@@ -54,8 +57,10 @@ def main(arguments_ligne=None):
     print("")
 
     # --- Exécution du scan -------------------------------------------------
+    # La ligne de commande tourne sur le poste de l'auditeur : le filtre
+    # anti-SSRF de l'interface web ne s'applique pas (autoriser_local=True).
     try:
-        resultat = lancer_scan(arguments.url, timeout=arguments.timeout)
+        resultat = lancer_scan(arguments.url, timeout=arguments.timeout, autoriser_local=True)
     except KeyboardInterrupt:
         print("\n[!] Scan interrompu par l'utilisateur.")
         sys.exit(1)
@@ -71,6 +76,11 @@ def main(arguments_ligne=None):
     if arguments.json:
         enregistrer_rapport(json.dumps(resultat, indent=2, ensure_ascii=False), arguments.json)
         print("[+] Rapport JSON enregistré dans : {}".format(arguments.json))
+
+    # Cible injoignable : scan impossible, code de sortie 2 (E15).
+    if resultat["statut"] == "impossible":
+        print("\n[!] Scan impossible : {}.".format(resultat["motif"]), file=sys.stderr)
+        sys.exit(CODE_SCAN_IMPOSSIBLE)
 
     return resultat
 

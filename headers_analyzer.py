@@ -3,14 +3,15 @@ headers_analyzer.py
 ===================
 Module d'analyse des en-tetes HTTP de securite.
 
-Ce module envoie une requete HTTP a une cible et analyse la presence
-et la configuration des en-tetes de securite recommandes par l'OWASP.
+Ce module analyse la presence des en-tetes de securite recommandes par
+l'OWASP dans une reponse HTTP deja obtenue (reseau.recuperer_page) : la
+page n'est demandee qu'une seule fois pour tout le scan (E42).
 
 Auteur : Mourtalla LO
 Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
 """
 
-import requests
+NOM_MODULE = "En-tetes HTTP"
 
 
 # ---------------------------------------------------------------------------
@@ -54,16 +55,14 @@ SECURITY_HEADERS = {
 }
 
 
-def analyser_headers(url, timeout=10):
+def analyser_headers_reponse(reponse):
     """
-    Analyse les en-tetes HTTP de securite d'une URL cible.
+    Analyse les en-têtes HTTP de sécurité d'une réponse déjà obtenue.
 
-    Parametres
+    Paramètres
     ----------
-    url : str
-        L'URL complete de la cible (ex. "https://suncom.app").
-    timeout : int
-        Delai maximal d'attente de la reponse, en secondes.
+    reponse : requests.Response
+        La réponse finale renvoyée par reseau.recuperer_page.
 
     Retour
     ------
@@ -75,37 +74,12 @@ def analyser_headers(url, timeout=10):
           - "headers_bruts": dictionnaire des en-tetes recus
     """
     resultat = {
-        "module": "En-tetes HTTP",
+        "module": NOM_MODULE,
         "statut": "succes",
         "message": "",
         "observations": [],
         "headers_bruts": {},
     }
-
-    # --- Envoi de la requete HTTP ------------------------------------------
-    try:
-        reponse = requests.get(
-            url,
-            timeout=timeout,
-            headers={"User-Agent": "WebAudit/1.0 (Audit de securite academique)"},
-            allow_redirects=True,
-        )
-    except requests.exceptions.SSLError:
-        resultat["statut"] = "erreur"
-        resultat["message"] = "Erreur SSL : impossible d'établir une connexion sécurisée."
-        return resultat
-    except requests.exceptions.ConnectionError:
-        resultat["statut"] = "erreur"
-        resultat["message"] = "Erreur de connexion : la cible est injoignable."
-        return resultat
-    except requests.exceptions.Timeout:
-        resultat["statut"] = "erreur"
-        resultat["message"] = "Délai d'attente dépassé : la cible ne répond pas."
-        return resultat
-    except requests.exceptions.RequestException as e:
-        resultat["statut"] = "erreur"
-        resultat["message"] = "Erreur lors de la requête : {}".format(e)
-        return resultat
 
     # On normalise les noms d'en-tetes recus en minuscules pour comparer
     headers_recus = {cle.lower(): valeur for cle, valeur in reponse.headers.items()}
@@ -150,12 +124,3 @@ def analyser_headers(url, timeout=10):
             })
 
     return resultat
-
-
-# ---------------------------------------------------------------------------
-# Test unitaire du module (execute uniquement si on lance ce fichier seul)
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    import json
-    test = analyser_headers("https://www.google.com")
-    print(json.dumps(test, indent=2, ensure_ascii=False))
