@@ -12,17 +12,12 @@ Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
 """
 
 import json
-import time
 import re
-from datetime import datetime
 from urllib.parse import urlparse
 
 from flask import Flask, render_template, request, jsonify, Response
 
-from headers_analyzer import analyser_headers
-from https_checker import verifier_https
-from cms_detector import detecter_cms
-from reporter import calculer_score, generer_rapport_texte
+from moteur import lancer_scan, normaliser_url
 from fiches import FICHES
 from pdf_reporter import generer_rapport_pdf
 
@@ -40,14 +35,6 @@ MAX_URLS_COMPARAISON = 30
 # On neutralise le chevron ouvrant : sans cela, la sequence </script>
 # qui pourrait apparaitre dans un correctif fermerait la balise.
 FICHES_JSON = json.dumps(FICHES, ensure_ascii=False).replace("<", "\\u003c")
-
-
-def normaliser_url(url):
-    """S'assure que l'URL commence par un schema. Prefixe avec https:// par defaut."""
-    url = url.strip()
-    if not url.startswith(("http://", "https://")):
-        url = "https://" + url
-    return url
 
 
 def url_valide(url):
@@ -97,38 +84,14 @@ def api_scan():
     if not url_valide(url):
         return jsonify({"erreur": "Cette URL ne semble pas valide. Verifiez le format (ex. suncom.app)."}), 400
 
-    debut = time.time()
-    # Horodatage unique de l'audit, avec le fuseau du serveur : il est repris
-    # tel quel par l'interface, les exports .txt/.json et le rapport PDF.
-    date_scan = datetime.now().astimezone().isoformat(timespec="seconds")
-    resultats = []
-
+    # Le scan lui-même est confié au moteur commun (moteur.py), partagé
+    # avec la ligne de commande (scanner.py).
     try:
-        resultats.append(analyser_headers(url, timeout=TIMEOUT))
-        resultats.append(verifier_https(url, timeout=TIMEOUT))
-        resultats.append(detecter_cms(url, timeout=TIMEOUT))
+        resultat = lancer_scan(url, timeout=TIMEOUT)
     except Exception as e:
         return jsonify({"erreur": "Erreur inattendue pendant le scan : {}".format(str(e))}), 500
 
-    duree = round(time.time() - debut, 2)
-    score = calculer_score(resultats)
-    rapport_texte = generer_rapport_texte(url, resultats, score, duree, date_scan)
-
-    # On retire les en-tetes bruts complets : ils ne sont pas affiches et
-    # peuvent etre volumineux. En revanche "details" est conserve : il est
-    # compact, et porte les champs exploites par la comparaison multi-sites
-    # (CMS detecte, disponibilite HTTPS) ainsi que par le rapport PDF.
-    for module in resultats:
-        module.pop("headers_bruts", None)
-
-    return jsonify({
-        "url": url,
-        "date_scan": date_scan,
-        "duree": duree,
-        "score": score,
-        "modules": resultats,
-        "rapport_texte": rapport_texte,
-    })
+    return jsonify(resultat)
 
 
 @app.route("/api/rapport-pdf", methods=["POST"])

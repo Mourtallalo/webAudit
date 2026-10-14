@@ -54,14 +54,50 @@ FLASK_DEBUG=1 python3 app.py
 
 ## Utilisation
 
-1. Saisir une URL dans le champ (ex. `suncom.app`, avec ou sans `https://`)
-2. Cliquer sur **Auditer**
-3. Le rapport s'affiche automatiquement : score global (A+ à F), puis le
+La ligne de commande et l'interface web sont dans le même dossier et
+utilisent le même moteur d'analyse (`moteur.py`, fonction `lancer_scan`) :
+pour une même cible, elles produisent le même score et les mêmes modules.
+
+### Ligne de commande (`scanner.py`)
+
+```bash
+python scanner.py https://suncom.app
+python scanner.py suncom.app --json rapport.json --texte rapport.txt
+python scanner.py https://suncom.app --timeout 5
+```
+
+- `url` : la cible (avec ou sans `https://`, ajouté par défaut) ;
+- `--json FICHIER` : enregistre le rapport JSON, avec exactement la même
+  structure que la réponse de `/api/scan` (`url`, `date_scan`, `duree`,
+  `score`, `modules`, `rapport_texte`) ;
+- `--texte FICHIER` : enregistre le rapport texte affiché à l'écran ;
+- `--timeout` : délai d'attente de chaque requête, en secondes (défaut : 10).
+
+### Interface web (`app.py`)
+
+1. Lancer `python app.py`, puis ouvrir **http://127.0.0.1:5000**
+2. Saisir une URL dans le champ (ex. `suncom.app`, avec ou sans `https://`)
+3. Cliquer sur **Auditer**
+4. Le rapport s'affiche automatiquement : score global (A+ à F), puis le
    détail des observations pour chacun des trois modules (en-têtes HTTP,
    HTTPS/TLS, CMS)
 
 Aucune donnée n'est enregistrée côté serveur : chaque scan est traité à la
 volée et le résultat n'existe que dans la page affichée au navigateur.
+
+Seule l'interface web filtre les cibles (refus des adresses locales et
+privées, voir « Architecture technique ») ; la ligne de commande, lancée
+par l'auditeur sur son propre poste, ne les filtre pas.
+
+### Tests
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+Les tests sont hors ligne : les modules d'analyse y sont remplacés par des
+fonctions factices.
 
 ---
 
@@ -70,6 +106,8 @@ volée et le résultat n'existe que dans la page affichée au navigateur.
 ```
 webaudit_web/
 ├── app.py                 # Application Flask (routes / et /api/scan)
+├── scanner.py             # Ligne de commande
+├── moteur.py              # Moteur d'analyse commun (lancer_scan)
 ├── headers_analyzer.py    # Module d'analyse des en-têtes HTTP (existant)
 ├── https_checker.py       # Module de vérification HTTPS/TLS (existant)
 ├── cms_detector.py        # Module de détection du CMS (existant)
@@ -89,8 +127,9 @@ webaudit_web/
 L'application suit une architecture classique client-serveur :
 
 - **Backend (`app.py`)** : expose une route `POST /api/scan` qui reçoit une
-  URL en JSON, exécute séquentiellement les trois modules d'analyse déjà
-  développés, calcule le score via `reporter.calculer_score`, et renvoie un
+  URL en JSON, la filtre, puis appelle `moteur.lancer_scan`, qui exécute
+  séquentiellement les trois modules d'analyse, calcule le score via
+  `reporter.calculer_score`, et renvoie un
   rapport JSON allégé (sans les en-têtes bruts complets, non utilisés par
   l'affichage).
 - **Frontend (`templates/index.html` + `static/`)** : une page unique en
