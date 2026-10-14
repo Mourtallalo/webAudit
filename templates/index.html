@@ -81,7 +81,7 @@
               aria-describedby="input-hint"
               required
             >
-            <button type="submit" class="btn-primary" id="scan-btn">
+            <button type="submit" class="btn-primary" id="scan-btn" disabled>
               <span class="btn-label">Auditer</span>
               <svg class="btn-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M5 12h13M12.5 5.5L19 12l-6.5 6.5"/>
@@ -90,6 +90,11 @@
           </div>
           <p class="input-hint" id="input-hint">Exemple : exemple.com — ou une adresse complète https://…</p>
           <p class="input-error" id="input-error" role="alert" hidden></p>
+          <!-- E26 : case obligatoire ; le serveur la vérifie aussi (« autorisation »). -->
+          <div class="case-autorisation">
+            <input type="checkbox" id="autorisation" name="autorisation" required>
+            <label for="autorisation">Je certifie être autorisé à auditer ce site (j'en suis le propriétaire ou j'ai son accord écrit).</label>
+          </div>
         </div>
       </form>
 

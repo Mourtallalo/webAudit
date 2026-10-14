@@ -92,13 +92,13 @@ def modules_factices(monkeypatch, dns):
 
 def scan_ligne_de_commande(tmp_path, url):
     chemin = tmp_path / "rapport.json"
-    scanner.main([url, "--json", str(chemin)])
+    scanner.main(["--autorise", url, "--json", str(chemin)])
     return json.loads(chemin.read_text(encoding="utf-8"))
 
 
 def scan_interface_web(url):
     client = application.app.test_client()
-    reponse = client.post("/api/scan", json={"url": url})
+    reponse = client.post("/api/scan", json={"autorisation": True, "url": url})
     assert reponse.status_code == 200, reponse.get_json()
     return reponse.get_json()
 
@@ -145,7 +145,7 @@ def test_normalisation_identique(modules_factices, tmp_path, capsys):
 
 
 def test_timeout_transmis(modules_factices, tmp_path, capsys):
-    scanner.main([URL, "--timeout", "3", "--json", str(tmp_path / "r.json")])
+    scanner.main(["--autorise", URL, "--timeout", "3", "--json", str(tmp_path / "r.json")])
     timeouts = {a[2] for a in modules_factices if a[0] in ("recuperer_page", "https")}
     assert timeouts == {3}
 
@@ -153,7 +153,7 @@ def test_timeout_transmis(modules_factices, tmp_path, capsys):
 def test_fichier_texte_identique_au_rapport(modules_factices, tmp_path, capsys):
     chemin_txt = tmp_path / "rapport.txt"
     chemin_json = tmp_path / "rapport.json"
-    scanner.main([URL, "--texte", str(chemin_txt), "--json", str(chemin_json)])
+    scanner.main(["--autorise", URL, "--texte", str(chemin_txt), "--json", str(chemin_json)])
     rapport = json.loads(chemin_json.read_text(encoding="utf-8"))
     assert chemin_txt.read_text(encoding="utf-8") == rapport["rapport_texte"]
     assert rapport["rapport_texte"] in capsys.readouterr().out

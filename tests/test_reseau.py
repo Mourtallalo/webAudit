@@ -224,7 +224,7 @@ def test_domaine_introuvable_moteur():
 
 
 def test_domaine_introuvable_interface_web():
-    reponse = application.app.test_client().post("/api/scan", json={"url": "inexistant.test"})
+    reponse = application.app.test_client().post("/api/scan", json={"autorisation": True, "url": "inexistant.test"})
     assert reponse.status_code == 200
     verifier_impossible(reponse.get_json())
 
@@ -232,7 +232,7 @@ def test_domaine_introuvable_interface_web():
 def test_domaine_introuvable_ligne_de_commande(tmp_path, capsys):
     chemin = tmp_path / "r.json"
     with pytest.raises(SystemExit) as sortie:
-        scanner.main(["inexistant.test", "--json", str(chemin)])
+        scanner.main(["--autorise", "inexistant.test", "--json", str(chemin)])
     assert sortie.value.code == 2
     verifier_impossible(json.loads(chemin.read_text(encoding="utf-8")))
     assert "Scan impossible : nom de domaine introuvable" in capsys.readouterr().err
@@ -250,7 +250,7 @@ def test_pas_de_pdf_pour_un_scan_impossible():
 
 def test_interface_web_refuse_une_cible_locale(dns):
     dns["localtest.me"] = ["127.0.0.1"]
-    reponse = application.app.test_client().post("/api/scan", json={"url": "localtest.me"})
+    reponse = application.app.test_client().post("/api/scan", json={"autorisation": True, "url": "localtest.me"})
     assert reponse.status_code == 400
     assert "adresse non publique refusée" in reponse.get_json()["erreur"]
 

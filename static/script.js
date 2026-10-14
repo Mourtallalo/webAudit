@@ -45,6 +45,15 @@ const sections = {
 const form = $("scan-form");
 const urlInput = $("url-input");
 const scanBtn = $("scan-btn");
+const caseAutorisation = $("autorisation");
+
+// E26 : le bouton reste désactivé tant que la case n'est pas cochée.
+function majBoutonScan() {
+  scanBtn.disabled = !caseAutorisation.checked;
+}
+caseAutorisation.addEventListener("change", majBoutonScan);
+// Le navigateur peut restaurer l'état de la case au rechargement.
+majBoutonScan();
 const inputError = $("input-error");
 const inputHint = $("input-hint");
 
@@ -486,7 +495,7 @@ async function lancerScan(url) {
   const requete = fetch("/api/scan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: url }),
+    body: JSON.stringify({ url: url, autorisation: caseAutorisation.checked }),
   });
 
   try {
@@ -510,7 +519,7 @@ async function lancerScan(url) {
     errorText.textContent = err.message || "Impossible de joindre le serveur. Réessayez.";
     afficher("error");
   } finally {
-    scanBtn.disabled = false;
+    majBoutonScan();
   }
 }
 
@@ -575,6 +584,7 @@ pdfBtn.addEventListener("click", async () => {
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   champTouche = true;
+  if (!caseAutorisation.checked) return;
 
   const message = validerUrl(urlInput.value);
   afficherErreurChamp(message);

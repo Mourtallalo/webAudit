@@ -104,9 +104,14 @@
             Les lignes vides sont ignorées. Maximum {{ max_urls }} adresses.
           </p>
           <p class="input-error" id="liste-error" role="alert" hidden></p>
+          <!-- E26 : case obligatoire ; le serveur la vérifie aussi (« autorisation »). -->
+          <div class="case-autorisation">
+            <input type="checkbox" id="autorisation" name="autorisation" required>
+            <label for="autorisation">Je certifie être autorisé à auditer chacun de ces sites</label>
+          </div>
         </div>
 
-        <button type="submit" class="btn-primary" id="lancer-btn">
+        <button type="submit" class="btn-primary" id="lancer-btn" disabled>
           <span class="btn-label">Lancer la campagne</span>
           <svg class="btn-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M5 12h13M12.5 5.5L19 12l-6.5 6.5"/>

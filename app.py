@@ -32,6 +32,8 @@ TIMEOUT = 10
 # interminable, et limite la charge imposée aux serveurs audités.
 MAX_URLS_COMPARAISON = 30
 
+MESSAGE_AUTORISATION = "Confirmez que vous êtes autorisé à auditer ce site."
+
 # La base de connaissances est injectée telle quelle dans les pages.
 # On neutralise le chevron ouvrant : sans cela, la séquence </script>
 # qui pourrait apparaître dans un correctif fermerait la balise.
@@ -59,6 +61,11 @@ def api_scan():
     """
     data = request.get_json(silent=True) or {}
     url_brute = data.get("url", "")
+
+    # E26 : la case cochée dans le navigateur ne suffit pas ; l'API exige
+    # elle-même la confirmation. Rien n'est enregistré à ce sujet.
+    if data.get("autorisation") is not True:
+        return jsonify({"erreur": MESSAGE_AUTORISATION}), 400
 
     if not url_brute:
         return jsonify({"erreur": "Merci de saisir une URL."}), 400

@@ -418,6 +418,29 @@ main { flex: 1; }
   margin-top: var(--sp-2);
 }
 .input-hint { color: var(--ink-2); }
+
+/* Case « Je certifie être autorisé » (E26) */
+.case-autorisation {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.case-autorisation input {
+  flex: none;
+  width: 18px; height: 18px;
+  margin-top: 1px;
+  accent-color: var(--focus);
+  cursor: pointer;
+}
+.case-autorisation input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.case-autorisation label { cursor: pointer; }
 .input-error {
   color: var(--crit);
   font-weight: 500;

@@ -9,8 +9,12 @@ celui de l'interface web : les deux donnent les mêmes résultats.
 
 USAGE :
     python scanner.py <URL>
-    python scanner.py https://suncom.app
-    python scanner.py https://suncom.app --json rapport.json --texte rapport.txt
+    python scanner.py https://suncom.app --autorise
+    python scanner.py https://suncom.app --autorise --json rapport.json --texte rapport.txt
+
+Sans --autorise, le programme demande « Êtes-vous autorisé à auditer
+<hôte> ? (o/N) » ; une autre réponse que « o », ou une entrée non
+interactive, l'arrête avec le code de sortie 3, sans rien scanner.
 
 Le fichier JSON a exactement la structure de la réponse de /api/scan.
 
@@ -27,6 +31,7 @@ Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
 import sys
 import json
 import argparse
+from urllib.parse import urlparse
 
 from moteur import lancer_scan, normaliser_url
 from reporter import enregistrer_rapport
@@ -34,6 +39,26 @@ from version import VERSION
 
 # Code de sortie quand la cible est injoignable (scan impossible).
 CODE_SCAN_IMPOSSIBLE = 2
+
+# Code de sortie quand l'autorisation d'auditer n'est pas confirmée (E26).
+CODE_NON_AUTORISE = 3
+
+
+def autorisation_confirmee(url):
+    """
+    Demande à l'utilisateur s'il est autorisé à auditer l'hôte.
+
+    Une entrée non interactive (redirection, script) vaut refus : la
+    question ne peut pas recevoir de réponse consciente.
+    """
+    if not sys.stdin or not sys.stdin.isatty():
+        return False
+    hote = urlparse(url).hostname or url
+    try:
+        reponse = input("Êtes-vous autorisé à auditer {} ? (o/N) ".format(hote))
+    except EOFError:
+        return False
+    return reponse.strip().lower() == "o"
 
 
 def main(arguments_ligne=None):
@@ -46,8 +71,16 @@ def main(arguments_ligne=None):
     parseur.add_argument("--json", metavar="FICHIER", help="Enregistre le rapport JSON dans un fichier.")
     parseur.add_argument("--texte", metavar="FICHIER", help="Enregistre le rapport texte dans un fichier.")
     parseur.add_argument("--timeout", type=int, default=10, help="Délai d'attente en secondes (défaut : 10).")
+    parseur.add_argument("--autorise", action="store_true",
+                         help="Certifie être autorisé à auditer la cible (sinon, la question est posée).")
 
     arguments = parseur.parse_args(arguments_ligne)
+
+    # --- Autorisation (E26) ------------------------------------------------
+    # Rien n'est enregistré au sujet de ce consentement.
+    if not arguments.autorise and not autorisation_confirmee(normaliser_url(arguments.url)):
+        print("[!] Scan annulé : autorisation non confirmée (option --autorise).", file=sys.stderr)
+        sys.exit(CODE_NON_AUTORISE)
 
     # --- Bannière ----------------------------------------------------------
     print("=" * 70)

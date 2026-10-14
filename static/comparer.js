@@ -33,6 +33,15 @@ const compteurUrls = $("compteur-urls");
 const listeError = $("liste-error");
 const listeHint = $("liste-hint");
 const lancerBtn = $("lancer-btn");
+const caseAutorisation = $("autorisation");
+
+// E26 : le bouton reste désactivé tant que la case n'est pas cochée.
+function majBoutonLancer() {
+  lancerBtn.disabled = !caseAutorisation.checked;
+}
+caseAutorisation.addEventListener("change", majBoutonLancer);
+// Le navigateur peut restaurer l'état de la case au rechargement.
+majBoutonLancer();
 
 const faitEl = $("fait");
 const totalEl = $("total");
@@ -174,7 +183,7 @@ async function scannerUne(adresse) {
     const reponse = await fetch("/api/scan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: adresse }),
+      body: JSON.stringify({ url: adresse, autorisation: caseAutorisation.checked }),
       signal: requeteEnCours.signal,
     });
     const data = await reponse.json();
@@ -565,6 +574,7 @@ $("export-csv-btn").addEventListener("click", () => {
 
 listeForm.addEventListener("submit", (e) => {
   e.preventDefault();
+  if (!caseAutorisation.checked) return;
 
   const adresses = lireListe();
   const probleme = validerListe(adresses);
@@ -576,9 +586,7 @@ listeForm.addEventListener("submit", (e) => {
   }
 
   lancerBtn.disabled = true;
-  lancerCampagne(adresses).finally(() => {
-    lancerBtn.disabled = false;
-  });
+  lancerCampagne(adresses).finally(majBoutonLancer);
 });
 
 $("nouvelle-campagne-btn").addEventListener("click", () => {
