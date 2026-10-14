@@ -14,7 +14,11 @@ web simple, construit avec Flask.
 ## Installation
 
 ### Prérequis
-- Python 3.8 ou supérieur
+- Python 3.10 ou supérieur. Le contrôle TLS en dépend : depuis Python 3.10,
+  le contexte TLS par défaut refuse les versions inférieures à TLS 1.2. Un
+  serveur limité à TLS 1.0 ou 1.1 est donc signalé par l'échec de la
+  poignée de main ; l'outil ne lit que la version négociée et ne teste pas
+  une à une les versions acceptées par le serveur.
 
 ### Étapes
 

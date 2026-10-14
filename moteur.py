@@ -93,14 +93,17 @@ def lancer_scan(url, timeout=10, autoriser_local=False):
         url_finale = None
 
     https = verifier_https(url, timeout=timeout, autoriser_local=autoriser_local)
-    hote_tls = https.get("details", {}).get("hote_tls")
+    details_tls = https.get("details", {})
+    hote_tls = details_tls.get("hote_tls")
+    port_tls = details_tls.get("port_tls")
+    hote_tls_lisible = "{} (port {})".format(hote_tls, port_tls) if hote_tls and port_tls else hote_tls
 
     resultats = [entetes, https, cms]
 
     duree = round(time.time() - debut, 2)
     score = calculer_score(resultats)
     rapport_texte = generer_rapport_texte(url, resultats, score, duree, date_scan,
-                                          url_finale=url_finale, hote_tls=hote_tls)
+                                          url_finale=url_finale, hote_tls=hote_tls_lisible)
 
     # On retire les en-têtes bruts complets : ils ne sont pas affichés et
     # peuvent être volumineux. En revanche « details » est conservé : il est
