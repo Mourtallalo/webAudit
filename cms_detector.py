@@ -1,109 +1,234 @@
 """
 cms_detector.py
 ===============
-Module de detection du systeme de gestion de contenu (CMS) et de sa version.
+Module de détection du système de gestion de contenu (CMS) et de sa version.
 
-Ce module analyse le code source HTML d'une page ainsi que certains fichiers
-caracteristiques afin d'identifier le CMS utilise (WordPress, Joomla, Drupal)
-et de determiner si sa version est potentiellement obsolete.
+Ce module analyse le code source HTML de la page déjà obtenue par
+reseau.recuperer_page (E42) afin d'identifier le CMS utilisé (WordPress,
+Drupal, Joomla, PrestaShop) et de situer sa version par rapport au
+référentiel daté et sourcé versions_reference.json (E28).
 
-La page est celle deja obtenue par reseau.recuperer_page : elle n'est
-demandee qu'une seule fois pour tout le scan (E42).
+Principes :
+  - une balise meta generator explicite suffit ; sinon, il faut au moins
+    deux indices de natures différentes, propres au CMS (E29) ;
+  - la version n'est lue qu'à des sources fiables : la balise generator
+    ou, pour WordPress, le paramètre ?ver= des ressources du cœur sous
+    /wp-includes/ (E27) ;
+  - aucune requête supplémentaire : aucun fichier caractéristique n'est
+    lu (E30, décision de l'auteur).
 
 Auteur : Mourtalla LO
-Memoire de fin de Licence 3 Reseaux et Telecommunications - ESTM 2025-2026
+Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
 """
 
+import os
 import re
+import json
+from collections import Counter
+from datetime import date
 
 from bs4 import BeautifulSoup
 
 
 NOM_MODULE = "Detection CMS"
 
+CHEMIN_REFERENTIEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "versions_reference.json")
+
+
+def charger_referentiel(chemin=CHEMIN_REFERENTIEL):
+    """Charge le référentiel des versions CMS (relevé manuel, daté et sourcé)."""
+    with open(chemin, encoding="utf-8") as fichier:
+        return json.load(fichier)
+
+
+REFERENTIEL = charger_referentiel()
+
+# « 2026-10-14 » -> « 14/10/2026 »
+DATE_REFERENTIEL = date.fromisoformat(REFERENTIEL["date_releve"]).strftime("%d/%m/%Y")
+MENTION_REFERENTIEL = "Référence des versions relevée le {}".format(DATE_REFERENTIEL)
+
 
 # ---------------------------------------------------------------------------
-# Signatures caracteristiques de chaque CMS
+# Signatures propres à chaque CMS (E29)
 # ---------------------------------------------------------------------------
-# Pour chaque CMS on definit :
-#   - des motifs presents dans le code HTML (chemins, mots-cles)
-#   - la derniere version stable connue (a actualiser periodiquement)
-CMS_SIGNATURES = {
-    "WordPress": {
-        "motifs_html": ["/wp-content/", "/wp-includes/", "wp-json"],
-        "fichiers": ["/readme.html", "/wp-login.php"],
-        "derniere_version_stable": "6.5",
-    },
-    "Joomla": {
-        "motifs_html": ["/media/jui/", "com_content", "/templates/"],
-        "fichiers": ["/administrator/", "/language/en-GB/en-GB.xml"],
-        "derniere_version_stable": "5.1",
-    },
-    "Drupal": {
-        "motifs_html": ["/sites/default/files", "/core/misc/drupal.js", "Drupal.settings"],
-        "fichiers": ["/CHANGELOG.txt", "/core/CHANGELOG.txt"],
-        "derniere_version_stable": "10.2",
-    },
-    "PrestaShop": {
-        "motifs_html": ["/modules/", "prestashop", "/themes/"],
-        "fichiers": ["/config/settings.inc.php"],
-        "derniere_version_stable": "8.1",
-    },
+# Chaque signature est une liste de groupes : il faut au moins un indice
+# dans CHAQUE groupe, et chaque groupe correspond à une nature d'indice
+# différente. Un indice est un motif (expression régulière) recherché
+# dans le HTML, ou ("entete", nom, motif) pour un en-tête HTTP.
+SIGNATURES = {
+    "WordPress": [
+        [r"/wp-content/"],
+        [r"/wp-includes/", r"https://api\.w\.org/"],
+    ],
+    "Drupal": [
+        [("entete", "x-generator", r"drupal"), r"drupal-settings-json"],
+        [r"/sites/default/files/", r"/core/misc/drupal\.js"],
+    ],
+    "Joomla": [
+        [r"/media/system/js/", r"/media/jui/"],
+        [r"option=com_", r"/components/com_"],
+    ],
+    "PrestaShop": [
+        [r"\b(?:var|let|const)\s+prestashop\s*=", r"\bwindow\.prestashop\s*="],
+        [r"/modules/ps_", r"/themes/[^\"'\s<>]+/assets/"],
+    ],
 }
 
+# Nom du CMS tel qu'il apparaît dans la balise generator, suivi de sa version.
+MOTIFS_GENERATOR = {
+    "WordPress": r"WordPress",
+    "Drupal": r"Drupal",
+    "Joomla": r"Joomla!?",
+    "PrestaShop": r"PrestaShop",
+}
 
-def _comparer_versions(version_detectee, version_stable):
+# Bibliothèques tierces embarquées sous /wp-includes/ : leur ?ver= est la
+# version de la bibliothèque, pas celle de WordPress.
+WP_INCLUDES_TIERS = ("/wp-includes/js/jquery/", "/wp-includes/js/dist/vendor/")
+
+MOTIF_WP_INCLUDES_VER = re.compile(
+    r"(/wp-includes/[^\"'\s<>?]+)\?(?:[^\"'\s<>]*?&(?:amp;)?)?ver=(\d+(?:\.\d+)+)(?=[&\"'\s<>]|$)",
+    re.I)
+
+
+def _version_en_tuple(version):
+    """« 6.5.2 » -> (6, 5, 2)."""
+    return tuple(int(x) for x in version.split("."))
+
+
+def _indice_present(indice, html, entetes):
+    if isinstance(indice, tuple):
+        _, nom, motif = indice
+        return bool(re.search(motif, entetes.get(nom, ""), re.I))
+    return bool(re.search(indice, html, re.I))
+
+
+def _libelle_indice(indice):
+    if isinstance(indice, tuple):
+        return "en-tête {}".format(indice[1])
+    return indice.replace("\\", "")
+
+
+def _lire_generator(html):
+    """Contenu de la balise meta generator, ou None."""
+    soup = BeautifulSoup(html, "html.parser")
+    for balise in soup.find_all("meta", attrs={"name": re.compile(r"^generator$", re.I)}):
+        if balise.get("content"):
+            return balise["content"]
+    return None
+
+
+def _cms_du_generator(generator):
+    """(nom du CMS, version ou None) d'après la balise generator, ou (None, None)."""
+    if not generator:
+        return None, None
+    for nom_cms, motif in MOTIFS_GENERATOR.items():
+        if re.search(r"\b" + motif, generator, re.I):
+            correspondance = re.search(r"\b" + motif + r"\s+(\d+(?:\.\d+)*)", generator, re.I)
+            return nom_cms, correspondance.group(1) if correspondance else None
+    return None, None
+
+
+def _cms_des_signatures(html, entetes):
+    """(nom du CMS, indices trouvés) si une signature complète est présente."""
+    for nom_cms, groupes in SIGNATURES.items():
+        indices = []
+        for groupe in groupes:
+            trouves = [i for i in groupe if _indice_present(i, html, entetes)]
+            if not trouves:
+                break
+            indices.append(_libelle_indice(trouves[0]))
+        else:
+            return nom_cms, indices
+    return None, []
+
+
+def _version_wp_includes(html):
     """
-    Compare deux numeros de version (ex. '5.8' vs '6.5').
+    Version de WordPress d'après le ?ver= des ressources du cœur sous /wp-includes/.
 
     Retour
     ------
-    True si la version detectee est plus ancienne que la version stable.
+    (version la plus fréquente, confiance) ou (None, None).
     """
-    def normaliser(v):
-        # Transforme "6.5.2" en tuple (6, 5, 2) pour comparaison numerique
-        return tuple(int(x) for x in re.findall(r"\d+", v))
+    valeurs = [ver for chemin, ver in MOTIF_WP_INCLUDES_VER.findall(html)
+               if not chemin.lower().startswith(WP_INCLUDES_TIERS)]
+    if not valeurs:
+        return None, None
+    compte = Counter(valeurs)
+    version = compte.most_common(1)[0][0]
+    confiance = "moyenne" if len(compte) == 1 else "faible (valeurs divergentes : {})".format(
+        ", ".join(sorted(compte)))
+    return version, confiance
 
-    try:
-        return normaliser(version_detectee) < normaliser(version_stable)
-    except (ValueError, TypeError):
-        return False
 
-
-def detecter_version_wordpress(html):
-    """Tente d'extraire la version de WordPress depuis la balise meta generator."""
-    soup = BeautifulSoup(html, "html.parser")
-    generator = soup.find("meta", attrs={"name": "generator"})
-    if generator and generator.get("content"):
-        correspondance = re.search(r"WordPress\s+([\d.]+)", generator["content"])
-        if correspondance:
-            return correspondance.group(1)
-    # Recherche alternative dans le HTML brut
-    correspondance = re.search(r"ver=([\d.]+)", html)
-    if correspondance:
-        return correspondance.group(1)
+def _branche(version, branches):
+    """Plus long préfixe de la version qui est une clé de « branches », ou None."""
+    morceaux = version.split(".")
+    for longueur in range(len(morceaux), 0, -1):
+        prefixe = ".".join(morceaux[:longueur])
+        if prefixe in branches:
+            return prefixe
     return None
 
 
-def detecter_version_generique(html, nom_cms):
-    """Extrait une version depuis la balise meta generator pour un CMS donne."""
-    soup = BeautifulSoup(html, "html.parser")
-    generator = soup.find("meta", attrs={"name": re.compile("generator", re.I)})
-    if generator and generator.get("content"):
-        correspondance = re.search(re.escape(nom_cms) + r"[!\s]+([\d.]+)", generator["content"], re.I)
-        if correspondance:
-            return correspondance.group(1)
-    return None
+def evaluer_version(nom_cms, version, referentiel=None):
+    """
+    Situe une version par rapport au référentiel (C05, E31).
+
+    Retour
+    ------
+    (niveau, message) ; le message cite la référence et sa source.
+    """
+    referentiel = referentiel or REFERENTIEL
+    ref = referentiel["cms"].get(nom_cms)
+    if ref is None:
+        return "INFO", "{} {} : CMS absent du référentiel, impossible de conclure.".format(nom_cms, version)
+
+    sources = " ; ".join(ref.get("sources", []))
+    maintenues = ref.get("branches_maintenues")
+    par_branche = maintenues or ref.get("dernieres_par_branche") or {}
+
+    # --- Version partielle : seule la version majeure est connue (C05) ------
+    if "." not in version:
+        if maintenues and not any(b.split(".")[0] == version for b in maintenues):
+            return "CRITIQUE", (
+                "{} {} : aucune branche {} n'est maintenue d'après la source "
+                "(branches maintenues : {} ; source : {}).".format(
+                    nom_cms, version, version, ", ".join(maintenues), sources))
+        return "INFO", "{} {} : version partielle : impossible de conclure.".format(nom_cms, version)
+
+    branche = _branche(version, par_branche)
+
+    # --- Branche non maintenue (CRITIQUE seulement si la liste existe) -------
+    if maintenues and branche is None:
+        profondeur = len(next(iter(maintenues)).split("."))
+        branche_detectee = ".".join(version.split(".")[:profondeur])
+        return "CRITIQUE", (
+            "{} {} : la branche {} ne figure pas parmi les branches maintenues ({}) "
+            "d'après la source ({}).".format(
+                nom_cms, version, branche_detectee, ", ".join(maintenues), sources))
+
+    reference = par_branche[branche] if branche else ref["derniere_version"]
+    precision = "branche {}, ".format(branche) if branche else ""
+
+    if _version_en_tuple(version) < _version_en_tuple(reference):
+        return "AVERTISSEMENT", "{} {} : version non à jour (référence : {}{} ; source : {}).".format(
+            nom_cms, version, precision, reference, sources)
+    if _version_en_tuple(version) == _version_en_tuple(reference):
+        return "OK", "{} {} : à jour (référence : {}{}).".format(nom_cms, version, precision, reference)
+    return "OK", "{} {} : plus récente que la référence ({}{}) : référentiel à mettre à jour.".format(
+        nom_cms, version, precision, reference)
 
 
 def detecter_cms_reponse(reponse):
     """
-    Fonction principale du module : identifie le CMS et évalue son obsolescence
+    Fonction principale du module : identifie le CMS et situe sa version
     à partir d'une réponse déjà obtenue (requests.Response).
 
     Retour
     ------
-    dict structure comme les autres modules du scanner.
+    dict structuré comme les autres modules du scanner.
     """
     resultat = {
         "module": NOM_MODULE,
@@ -114,21 +239,17 @@ def detecter_cms_reponse(reponse):
     }
 
     html = reponse.text
+    entetes = {cle.lower(): valeur for cle, valeur in reponse.headers.items()}
 
-    cms_detecte = None
-    indices_trouves = []
+    # --- Identification : generator explicite, sinon signature complète -----
+    generator = _lire_generator(html)
+    cms_detecte, version = _cms_du_generator(generator)
+    if cms_detecte:
+        indices = ["balise meta generator « {} »".format(generator)]
+    else:
+        cms_detecte, indices = _cms_des_signatures(html, entetes)
 
-    # --- Recherche des signatures dans le HTML -----------------------------
-    for nom_cms, signature in CMS_SIGNATURES.items():
-        for motif in signature["motifs_html"]:
-            if motif.lower() in html.lower():
-                cms_detecte = nom_cms
-                indices_trouves.append(motif)
-                break
-        if cms_detecte:
-            break
-
-    # --- Aucun CMS detecte -------------------------------------------------
+    # --- Aucun CMS détecté --------------------------------------------------
     if not cms_detecte:
         resultat["observations"].append({
             "critere": "Identification du CMS",
@@ -138,52 +259,47 @@ def detecter_cms_reponse(reponse):
         resultat["details"] = {"cms": None, "version": None}
         return resultat
 
-    # --- Un CMS a ete detecte : on cherche sa version ----------------------
-    if cms_detecte == "WordPress":
-        version = detecter_version_wordpress(html)
-    else:
-        version = detecter_version_generique(html, cms_detecte)
+    # --- Version, depuis une source fiable uniquement (E27) -----------------
+    source, confiance = None, None
+    if version:
+        source, confiance = "balise meta generator", "élevée"
+    elif cms_detecte == "WordPress":
+        version, confiance = _version_wp_includes(html)
+        if version:
+            source = "paramètre ?ver= des ressources du cœur sous /wp-includes/"
 
-    signature = CMS_SIGNATURES[cms_detecte]
-    version_stable = signature["derniere_version_stable"]
-
+    reference = REFERENTIEL["cms"][cms_detecte]
     resultat["details"] = {
         "cms": cms_detecte,
         "version": version,
-        "version_stable": version_stable,
-        "indices": indices_trouves,
+        "source_version": source,
+        "confiance_version": confiance,
+        "indices": indices,
+        "version_reference": reference["derniere_version"],
+        "date_referentiel": REFERENTIEL["date_releve"],
     }
 
+    # Usage d'un CMS : constat neutre, aucun point retiré (C06).
     resultat["observations"].append({
         "critere": "Identification du CMS",
-        "niveau": "INFO",
-        "message": "CMS détecté : {} (indices : {}).".format(cms_detecte, ", ".join(indices_trouves)),
+        "niveau": "OK",
+        "message": "CMS détecté : {} (indices : {}).".format(cms_detecte, ", ".join(indices)),
     })
 
-    # --- Evaluation de l'obsolescence de la version ------------------------
+    # --- Situation de la version --------------------------------------------
     if version:
-        if _comparer_versions(version, version_stable):
-            resultat["observations"].append({
-                "critere": "Version du CMS",
-                "niveau": "CRITIQUE",
-                "message": "Version {} {} détectée, OBSOLÈTE (version stable : {}). "
-                           "Des vulnérabilités connues peuvent exister. Mise à jour urgente.".format(
-                               cms_detecte, version, version_stable),
-            })
-        else:
-            resultat["observations"].append({
-                "critere": "Version du CMS",
-                "niveau": "OK",
-                "message": "Version {} {} détectée, à jour ou récente (version stable : {}).".format(
-                    cms_detecte, version, version_stable),
-            })
+        niveau, message = evaluer_version(cms_detecte, version)
+        message = "{} Version lue dans : {} (confiance {}). {}.".format(
+            message, source, confiance, MENTION_REFERENTIEL)
     else:
-        resultat["observations"].append({
-            "critere": "Version du CMS",
-            "niveau": "AVERTISSEMENT",
-            "message": "CMS {} détecté mais version non identifiable. "
-                       "La dissimulation de version est une bonne pratique, "
-                       "mais vérifiez manuellement que le CMS est à jour.".format(cms_detecte),
-        })
+        niveau = "OK"
+        message = "Version non divulguée (bonne pratique) : actualité non vérifiable. {}.".format(
+            MENTION_REFERENTIEL)
+
+    resultat["observations"].append({
+        "critere": "Version du CMS",
+        "niveau": niveau,
+        "message": message,
+    })
 
     return resultat

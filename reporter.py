@@ -16,6 +16,7 @@ import json
 from datetime import datetime
 
 from fiches import NOMS_MODULES
+from cms_detector import MENTION_REFERENTIEL
 
 
 # ---------------------------------------------------------------------------
@@ -140,6 +141,7 @@ def _entete_rapport(url, duree, date_scan, url_finale, hote_tls):
     moment = datetime.fromisoformat(date_scan) if date_scan else datetime.now()
     lignes.append("Date du scan   : {}".format(moment.strftime("%d/%m/%Y à %H:%M:%S")))
     lignes.append("Durée du scan  : {:.2f} secondes".format(duree))
+    lignes.append("Versions CMS   : {}".format(MENTION_REFERENTIEL))
     lignes.append("")
     return lignes
 

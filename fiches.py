@@ -243,10 +243,11 @@ FICHES = {
     "Version du CMS": {
         "quoi": "Le numéro de version exact du CMS, souvent laissé dans une balise meta ou "
                 "dans l'adresse des scripts chargés.",
-        "risque": "Une version obsolète a des failles publiées, avec un code d'exploitation "
-                  "déjà disponible. Des robots balayent le web en continu à la recherche "
-                  "précisément de ces versions : l'attaque n'est pas ciblée, elle est "
-                  "automatique.",
+        "risque": "Une version qui n'est plus à jour peut contenir des failles corrigées "
+                  "depuis, et donc publiées. Des robots balayent le web en continu à la "
+                  "recherche de versions vulnérables : l'attaque n'est pas ciblée, elle "
+                  "est automatique. Consultez les avis de sécurité officiels du CMS pour "
+                  "savoir si votre version est concernée.",
         "fix": [
             {"label": "WordPress — avec WP-CLI",
              "code": "wp core update\nwp plugin update --all\nwp theme update --all"},
