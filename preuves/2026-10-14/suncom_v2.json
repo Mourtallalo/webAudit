@@ -1,0 +1,158 @@
+{
+  "url": "https://suncom.app",
+  "url_finale": "https://www.suncom.app/",
+  "redirections": [
+    "https://suncom.app",
+    "https://www.suncom.app/"
+  ],
+  "hote_tls": "suncom.app",
+  "statut": "complet",
+  "motif": null,
+  "version_outil": "2.0.0",
+  "date_referentiel_cms": "2026-10-14",
+  "date_scan": "2026-10-14T15:27:10+00:00",
+  "duree": 1.45,
+  "score": {
+    "points": 100,
+    "note": "A+",
+    "decompte": {
+      "CRITIQUE": 0,
+      "AVERTISSEMENT": 0,
+      "INFO": 0,
+      "OK": 12
+    },
+    "complet": true,
+    "modules_non_executes": []
+  },
+  "modules": [
+    {
+      "module": "En-tetes HTTP",
+      "statut": "succes",
+      "message": "",
+      "observations": [
+        {
+          "header": "Content-Security-Policy",
+          "present": true,
+          "valeur": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://alvypdhuikevmpgmhcyh.supabase.co wss://alvypdhuikevmpgmhcyh.supabase.co; frame-src https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+          "niveau": "OK",
+          "role": "Protège contre les attaques XSS en contrôlant les sources de contenu autorisées.",
+          "message": "En-tête présent (sa valeur n'est pas évaluée par l'outil)."
+        },
+        {
+          "header": "Strict-Transport-Security",
+          "present": true,
+          "valeur": "max-age=63072000",
+          "niveau": "OK",
+          "role": "Force le navigateur à utiliser HTTPS pour toutes les connexions futures.",
+          "message": "En-tête présent (sa valeur n'est pas évaluée par l'outil)."
+        },
+        {
+          "header": "X-Frame-Options",
+          "present": true,
+          "valeur": "DENY",
+          "niveau": "OK",
+          "role": "Protège contre le détournement de clic en interdisant l'affichage dans une iframe.",
+          "message": "En-tête présent (sa valeur n'est pas évaluée par l'outil)."
+        },
+        {
+          "header": "X-Content-Type-Options",
+          "present": true,
+          "valeur": "nosniff",
+          "niveau": "OK",
+          "role": "Empêche le navigateur de deviner le type MIME (protection anti MIME-sniffing).",
+          "message": "En-tête présent (sa valeur n'est pas évaluée par l'outil)."
+        },
+        {
+          "header": "Referrer-Policy",
+          "present": true,
+          "valeur": "strict-origin-when-cross-origin",
+          "niveau": "OK",
+          "role": "Contrôle les informations envoyées dans l'en-tête Referer.",
+          "message": "En-tête présent (sa valeur n'est pas évaluée par l'outil)."
+        },
+        {
+          "header": "Permissions-Policy",
+          "present": true,
+          "valeur": "camera=(self), microphone=(), geolocation=(), payment=()",
+          "niveau": "OK",
+          "role": "Restreint l'accès aux API du navigateur (caméra, micro, géolocalisation).",
+          "message": "En-tête présent (sa valeur n'est pas évaluée par l'outil)."
+        },
+        {
+          "header": "Server",
+          "present": true,
+          "valeur": "Vercel",
+          "niveau": "OK",
+          "role": "Révèle des informations sur la technologie du serveur.",
+          "message": "En-tête présent, sans numéro de version : rien d'exploitable divulgué."
+        }
+      ]
+    },
+    {
+      "module": "HTTPS / TLS",
+      "statut": "succes",
+      "message": "",
+      "observations": [
+        {
+          "critere": "Disponibilité HTTPS",
+          "niveau": "OK",
+          "message": "Le serveur répond en HTTPS (port 443)."
+        },
+        {
+          "critere": "Validité du certificat",
+          "niveau": "OK",
+          "message": "Certificat valide (expire le 2026-12-12, dans 59 jours). Émetteur : Let's Encrypt."
+        },
+        {
+          "critere": "Version du protocole TLS",
+          "niveau": "OK",
+          "message": "Version TLS négociée : TLSv1.3."
+        },
+        {
+          "critere": "Redirection HTTP vers HTTPS",
+          "niveau": "OK",
+          "message": "Le trafic HTTP est correctement redirigé vers HTTPS."
+        }
+      ],
+      "details": {
+        "hote_tls": "suncom.app",
+        "port_tls": 443,
+        "certificat": {
+          "etat": "ok",
+          "https_actif": true,
+          "version_tls": "TLSv1.3",
+          "version_lue_sans_verification": false,
+          "certificat_valide": true,
+          "code_verification": null,
+          "date_expiration": "2026-12-12",
+          "jours_avant_expiration": 59,
+          "emetteur": "Let's Encrypt",
+          "sujet": "suncom.app",
+          "erreur": null
+        },
+        "redirection": {
+          "http_accessible": true,
+          "redirige_vers_https": true,
+          "url_finale": "https://www.suncom.app/"
+        }
+      }
+    },
+    {
+      "module": "Detection CMS",
+      "statut": "succes",
+      "message": "",
+      "observations": [
+        {
+          "critere": "Identification du CMS",
+          "niveau": "OK",
+          "message": "Aucun CMS standard détecté. Le site utilise probablement un développement sur mesure."
+        }
+      ],
+      "details": {
+        "cms": null,
+        "version": null
+      }
+    }
+  ],
+  "rapport_texte": "======================================================================\n        RAPPORT D'AUDIT DE SÉCURITÉ WEB - WebAudit\n======================================================================\nOutil          : WebAudit 2.0.0\nURL saisie     : https://suncom.app\nURL analysée   : https://www.suncom.app/\nHôte TLS       : suncom.app (port 443)\nDate du scan   : 14/10/2026 à 15:27:10\nDurée du scan  : 1.45 secondes\nVersions CMS   : Référence des versions relevée le 14/10/2026\n\n----------------------------------------------------------------------\n  SCORE DE SÉCURITÉ GLOBAL : A+  (100/100)\n----------------------------------------------------------------------\n  Problèmes critiques   : 0\n  Avertissements        : 0\n  Informations          : 0\n  Points conformes      : 12\n  Points                : 100/100\n\n======================================================================\n  MODULE : En-têtes HTTP de sécurité\n======================================================================\n  [+] Content-Security-Policy\n      En-tête présent (sa valeur n'est pas évaluée par l'outil).\n      Valeur : default-src 'self'; script-src 'self'; style-src 'self'\n               'unsafe-inline'; img-src 'self' data: blob: https:;\n               font-src 'self' data:; connect-src 'self'\n               https://alvypdhuikevmpgmhcyh.supabase.co\n               wss://alvypdhuikevmpgmhcyh.supabase.co; frame-src\n               https://www.youtube.com\n               https://www.youtube-nocookie.com; media-src 'self'\n               blob:; worker-src 'self' blob:; manifest-src 'self';\n               object-src 'none'; base-uri 'self'; form-action 'self';\n               frame-ancestors 'none'; upgrade-insecure-requests\n  [+] Strict-Transport-Security\n      En-tête présent (sa valeur n'est pas évaluée par l'outil).\n      Valeur : max-age=63072000\n  [+] X-Frame-Options\n      En-tête présent (sa valeur n'est pas évaluée par l'outil).\n      Valeur : DENY\n  [+] X-Content-Type-Options\n      En-tête présent (sa valeur n'est pas évaluée par l'outil).\n      Valeur : nosniff\n  [+] Referrer-Policy\n      En-tête présent (sa valeur n'est pas évaluée par l'outil).\n      Valeur : strict-origin-when-cross-origin\n  [+] Permissions-Policy\n      En-tête présent (sa valeur n'est pas évaluée par l'outil).\n      Valeur : camera=(self), microphone=(), geolocation=(),\n               payment=()\n  [+] Server\n      En-tête présent, sans numéro de version : rien d'exploitable divulgué.\n      Valeur : Vercel\n\n======================================================================\n  MODULE : HTTPS et certificat TLS\n======================================================================\n  [+] Disponibilité HTTPS\n      Le serveur répond en HTTPS (port 443).\n  [+] Validité du certificat\n      Certificat valide (expire le 2026-12-12, dans 59 jours). Émetteur : Let's Encrypt.\n  [+] Version du protocole TLS\n      Version TLS négociée : TLSv1.3.\n  [+] Redirection HTTP vers HTTPS\n      Le trafic HTTP est correctement redirigé vers HTTPS.\n\n======================================================================\n  MODULE : Détection du CMS\n======================================================================\n  [+] Identification du CMS\n      Aucun CMS standard détecté. Le site utilise probablement un développement sur mesure.\n\n======================================================================\n  Rapport généré par WebAudit 2.0.0 - Outil d'audit académique\n  Mémoire L3 RT - Mourtalla LO - ESTM 2025-2026\n======================================================================"
+}

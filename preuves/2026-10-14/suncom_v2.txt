@@ -1,0 +1,77 @@
+======================================================================
+        RAPPORT D'AUDIT DE SÉCURITÉ WEB - WebAudit
+======================================================================
+Outil          : WebAudit 2.0.0
+URL saisie     : https://suncom.app
+URL analysée   : https://www.suncom.app/
+Hôte TLS       : suncom.app (port 443)
+Date du scan   : 14/10/2026 à 15:27:10
+Durée du scan  : 1.45 secondes
+Versions CMS   : Référence des versions relevée le 14/10/2026
+
+----------------------------------------------------------------------
+  SCORE DE SÉCURITÉ GLOBAL : A+  (100/100)
+----------------------------------------------------------------------
+  Problèmes critiques   : 0
+  Avertissements        : 0
+  Informations          : 0
+  Points conformes      : 12
+  Points                : 100/100
+
+======================================================================
+  MODULE : En-têtes HTTP de sécurité
+======================================================================
+  [+] Content-Security-Policy
+      En-tête présent (sa valeur n'est pas évaluée par l'outil).
+      Valeur : default-src 'self'; script-src 'self'; style-src 'self'
+               'unsafe-inline'; img-src 'self' data: blob: https:;
+               font-src 'self' data:; connect-src 'self'
+               https://alvypdhuikevmpgmhcyh.supabase.co
+               wss://alvypdhuikevmpgmhcyh.supabase.co; frame-src
+               https://www.youtube.com
+               https://www.youtube-nocookie.com; media-src 'self'
+               blob:; worker-src 'self' blob:; manifest-src 'self';
+               object-src 'none'; base-uri 'self'; form-action 'self';
+               frame-ancestors 'none'; upgrade-insecure-requests
+  [+] Strict-Transport-Security
+      En-tête présent (sa valeur n'est pas évaluée par l'outil).
+      Valeur : max-age=63072000
+  [+] X-Frame-Options
+      En-tête présent (sa valeur n'est pas évaluée par l'outil).
+      Valeur : DENY
+  [+] X-Content-Type-Options
+      En-tête présent (sa valeur n'est pas évaluée par l'outil).
+      Valeur : nosniff
+  [+] Referrer-Policy
+      En-tête présent (sa valeur n'est pas évaluée par l'outil).
+      Valeur : strict-origin-when-cross-origin
+  [+] Permissions-Policy
+      En-tête présent (sa valeur n'est pas évaluée par l'outil).
+      Valeur : camera=(self), microphone=(), geolocation=(),
+               payment=()
+  [+] Server
+      En-tête présent, sans numéro de version : rien d'exploitable divulgué.
+      Valeur : Vercel
+
+======================================================================
+  MODULE : HTTPS et certificat TLS
+======================================================================
+  [+] Disponibilité HTTPS
+      Le serveur répond en HTTPS (port 443).
+  [+] Validité du certificat
+      Certificat valide (expire le 2026-12-12, dans 59 jours). Émetteur : Let's Encrypt.
+  [+] Version du protocole TLS
+      Version TLS négociée : TLSv1.3.
+  [+] Redirection HTTP vers HTTPS
+      Le trafic HTTP est correctement redirigé vers HTTPS.
+
+======================================================================
+  MODULE : Détection du CMS
+======================================================================
+  [+] Identification du CMS
+      Aucun CMS standard détecté. Le site utilise probablement un développement sur mesure.
+
+======================================================================
+  Rapport généré par WebAudit 2.0.0 - Outil d'audit académique
+  Mémoire L3 RT - Mourtalla LO - ESTM 2025-2026
+======================================================================
