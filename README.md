@@ -1,203 +1,237 @@
-# WebAudit — Interface Web
+# WebAudit 2.0.0
 
-Interface web pour le scanner de vulnérabilités WebAudit, développée dans le
-cadre du mémoire de fin de Licence 3 Réseaux et Télécommunications (ESTM
-2025-2026, Mourtalla LO).
+Scanner de vulnérabilités web élémentaires, développé dans le cadre du
+mémoire de fin de Licence 3 Réseaux et Télécommunications (ESTM 2025-2026,
+Mourtalla LO).
 
-Cette interface ne réimplémente aucune logique de scan : elle réutilise telles
-quelles les modules Python déjà développés et testés (`headers_analyzer.py`,
-`https_checker.py`, `cms_detector.py`, `reporter.py`) derrière un formulaire
-web simple, construit avec Flask.
+WebAudit réalise un audit **passif** d'un site selon trois axes :
+
+1. les en-têtes HTTP de sécurité (`headers_analyzer.py`) ;
+2. HTTPS et le certificat TLS (`https_checker.py`) ;
+3. le CMS et sa version (`cms_detector.py`).
+
+Il s'utilise par une **interface web** (`app.py`, Flask) ou en **ligne de
+commande** (`scanner.py`). Les deux appellent le même moteur
+(`moteur.lancer_scan`) : pour une même cible, ils donnent le même score et
+les mêmes modules.
+
+> N'auditez que des sites dont vous êtes le propriétaire ou pour lesquels
+> vous avez un accord écrit. Auditer un système sans l'autorisation de son
+> propriétaire peut engager la responsabilité pénale de son auteur (loi
+> n°2008-11 du 25 janvier 2008 sur la cybercriminalité).
 
 ---
 
 ## Installation
 
-### Prérequis
-- Python 3.10 ou supérieur. Le contrôle TLS en dépend : depuis Python 3.10,
-  le contexte TLS par défaut refuse les versions inférieures à TLS 1.2. Un
-  serveur limité à TLS 1.0 ou 1.1 est donc signalé par l'échec de la
-  poignée de main ; l'outil ne lit que la version négociée et ne teste pas
-  une à une les versions acceptées par le serveur.
+**Prérequis : Python 3.10 au minimum.** Le contrôle TLS en dépend : depuis
+Python 3.10, le contexte TLS par défaut refuse les versions inférieures à
+TLS 1.2 (voir « Limites connues »).
 
-### Étapes
+### Avec uv
 
 ```bash
-# 1. Se placer dans le dossier du projet
-cd webaudit_web
+uv venv --python 3.12 .venv
+uv pip install --python .venv -r requirements.txt -r requirements-dev.txt
+```
 
-# 2. (Recommandé) créer un environnement virtuel
-python3 -m venv venv
-source venv/bin/activate      # Linux/macOS
-venv\Scripts\activate         # Windows
+### Avec pip
 
-# 3. Installer les dépendances
+```bash
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+source .venv/bin/activate       # Linux / macOS
 pip install -r requirements.txt
+pip install -r requirements-dev.txt   # pytest, pour les tests
 ```
 
----
-
-## Lancer l'application
-
-```bash
-python3 app.py
-```
-
-Puis ouvrir un navigateur à l'adresse : **http://127.0.0.1:5000**
-
-Par défaut, le serveur écoute uniquement en local (`127.0.0.1`) et le mode
-debug est désactivé — une bonne pratique de sécurité, particulièrement
-pertinente pour un outil d'audit. Pour activer le rechargement automatique
-pendant le développement :
-
-```bash
-FLASK_DEBUG=1 python3 app.py
-```
+Dépendances : Flask, requests, beautifulsoup4, reportlab (et pytest pour
+les tests). L'historique utilise `sqlite3`, inclus dans Python.
 
 ---
 
 ## Utilisation
 
-La ligne de commande et l'interface web sont dans le même dossier et
-utilisent le même moteur d'analyse (`moteur.py`, fonction `lancer_scan`) :
-pour une même cible, elles produisent le même score et les mêmes modules.
-
-### Ligne de commande (`scanner.py`)
+### Interface web
 
 ```bash
-python scanner.py https://suncom.app
-python scanner.py suncom.app --json rapport.json --texte rapport.txt
-python scanner.py https://suncom.app --timeout 5
+python app.py
 ```
 
-- `url` : la cible (avec ou sans `https://`, ajouté par défaut) ;
-- `--json FICHIER` : enregistre le rapport JSON, avec exactement la même
-  structure que la réponse de `/api/scan` (`url`, `date_scan`, `duree`,
-  `score`, `modules`, `rapport_texte`) ;
-- `--texte FICHIER` : enregistre le rapport texte affiché à l'écran ;
-- `--timeout` : délai d'attente de chaque requête, en secondes (défaut : 10).
+Puis ouvrir **http://127.0.0.1:5000**.
 
-### Interface web (`app.py`)
+1. Saisir l'adresse du site (ex. `suncom.app`, avec ou sans `https://`).
+2. Cocher la case **« Je certifie être autorisé à auditer ce site (j'en
+   suis le propriétaire ou j'ai son accord écrit). »** Le bouton
+   **Auditer** reste désactivé tant qu'elle n'est pas cochée.
+3. Le rapport s'affiche : note (A+ à F), points sur 100, décompte par
+   niveau, détail des trois modules avec les correctifs, puis l'évolution
+   du score pour cet hôte.
+4. Téléchargements : rapport PDF, rapport texte (.txt), données (.json).
 
-1. Lancer `python app.py`, puis ouvrir **http://127.0.0.1:5000**
-2. Saisir une URL dans le champ (ex. `suncom.app`, avec ou sans `https://`)
-3. Cliquer sur **Auditer**
-4. Le rapport s'affiche automatiquement : score global (A+ à F), puis le
-   détail des observations pour chacun des trois modules (en-têtes HTTP,
-   HTTPS/TLS, CMS)
+La page **Comparer** audite plusieurs sites à la suite (30 au maximum),
+avec une case équivalente : « Je certifie être autorisé à auditer chacun
+de ces sites ».
 
-### Historique des scans
+Le serveur écoute uniquement en local (`127.0.0.1`) et le mode debug est
+désactivé par défaut (`FLASK_DEBUG=1` pour l'activer en développement).
 
-L'interface web conserve un historique des scans **sur l'ordinateur qui
-exécute `app.py`**, dans la base SQLite `instance/historique.db` (dossier
-ignoré par Git). Pour chaque scan abouti, elle enregistre : l'hôte, l'URL
-saisie, la date du scan, la note, les points, le décompte des quatre
-niveaux (critiques, avertissements, informations, conformes), l'indicateur
-« audit complet » et la version de l'outil. Rien d'autre : ni le détail
-des observations, ni la confirmation d'autorisation.
-
-- Un scan « impossible » n'est pas enregistré.
-- La ligne de commande n'écrit rien dans l'historique.
-- Sous le résultat, la section « Évolution du score pour cet hôte » trace
-  la courbe des points dès deux scans (`GET /api/history?url=…`).
-- **Pour tout effacer** : supprimer le fichier `instance/historique.db`.
-
-Seule l'interface web filtre les cibles (refus des adresses locales et
-privées, voir « Architecture technique ») ; la ligne de commande, lancée
-par l'auditeur sur son propre poste, ne les filtre pas.
-
-### Issue d'un scan
-
-Le champ `statut` du JSON (et l'en-tête du rapport texte) indique :
-
-- `complet` : les trois modules ont abouti ; points et note (A+ à F) ;
-- `partiel` : la cible répond mais un module n'a pas abouti ; des points,
-  sans note ;
-- `impossible` : la page n'a pas pu être récupérée (nom de domaine
-  introuvable, connexion refusée, délai dépassé, erreur TLS) ; ni points
-  ni note, et le champ `motif` explique pourquoi. La ligne de commande se
-  termine alors avec le code de sortie 2.
-
-Le JSON et le rapport texte indiquent aussi l'URL saisie (`url`), l'URL
-finale analysée après les redirections (`url_finale`, avec le parcours
-complet dans `redirections`) et l'hôte interrogé par le contrôle TLS
-(`hote_tls`).
-
-### Tests
+### Ligne de commande
 
 ```bash
-pip install -r requirements-dev.txt
+python scanner.py https://suncom.app --autorise
+python scanner.py suncom.app --autorise --json rapport.json --texte rapport.txt
+python scanner.py https://suncom.app --autorise --timeout 5
+```
+
+- `url` : la cible (`https://` est ajouté si le schéma manque) ;
+- `--autorise` : certifie être autorisé à auditer la cible. Sans cette
+  option, le programme demande « Êtes-vous autorisé à auditer <hôte> ?
+  (o/N) » ; toute autre réponse que « o », ou une entrée non interactive
+  (script, redirection), l'arrête **sans rien scanner** ;
+- `--json FICHIER` : rapport JSON, de même structure que la réponse de
+  `/api/scan` ;
+- `--texte FICHIER` : le rapport texte affiché à l'écran ;
+- `--timeout` : délai d'attente de chaque requête, en secondes (défaut : 10).
+
+Codes de sortie : `0` scan effectué, `2` scan impossible (cible
+injoignable), `3` autorisation non confirmée.
+
+La ligne de commande tourne sur le poste de l'auditeur : elle n'applique
+pas le filtre anti-SSRF de l'interface web et n'écrit rien dans
+l'historique.
+
+---
+
+## Case d'autorisation
+
+La confirmation est exigée à trois niveaux : la case de l'interface, le
+serveur (`/api/scan` refuse avec le code 400 et le message « Confirmez que
+vous êtes autorisé à auditer ce site. » si le corps ne contient pas
+`"autorisation": true`), et la ligne de commande (`--autorise` ou réponse
+« o »). **Rien n'est enregistré au sujet de ce consentement.**
+
+---
+
+## Score et rapports
+
+Chaque observation retire des points selon son niveau : **CRITIQUE 20,
+AVERTISSEMENT 8, INFO 2, OK 0**. Note : **A+ ≥ 95, A ≥ 85, B ≥ 70, C ≥ 55,
+D ≥ 40, E ≥ 20, sinon F**. Le résumé du rapport texte (critiques,
+avertissements, informations, conformes, points) permet de recalculer le
+score.
+
+Issue d'un scan (champ `statut`) :
+
+- `complet` : les trois modules ont abouti ; points et note ;
+- `partiel` : la cible répond mais un module n'a pas abouti ; des points,
+  **sans note** ;
+- `impossible` : la page n'a pas pu être récupérée (nom de domaine
+  introuvable, connexion refusée, délai dépassé, erreur TLS) ; ni points ni
+  note, et le champ `motif` explique pourquoi.
+
+Le JSON contient : `url` (URL saisie), `url_finale` (après les
+redirections, parcours complet dans `redirections`), `hote_tls`, `statut`,
+`motif`, `version_outil`, `date_referentiel_cms`, `date_scan`, `duree`,
+`score`, `modules`, `rapport_texte`. Le rapport texte et le PDF indiquent
+la version de WebAudit, l'URL finale et la date du référentiel des
+versions CMS.
+
+---
+
+## Historique des scans
+
+L'interface web conserve un historique **sur l'ordinateur qui exécute
+`app.py`**, dans la base SQLite `instance/historique.db` (dossier ignoré
+par Git). Pour chaque scan abouti : l'hôte, l'URL saisie, la date du scan,
+la note, les points, le décompte des quatre niveaux, l'indicateur « audit
+complet » et la version de l'outil. Rien d'autre (ni le détail des
+observations, ni la confirmation d'autorisation).
+
+- Un scan « impossible » n'est pas enregistré ; la ligne de commande
+  n'écrit rien.
+- `GET /api/history?url=…` renvoie `{hote, scans}`, du plus ancien au plus
+  récent ; l'interface en trace la courbe (« Évolution du score pour cet
+  hôte ») dès deux scans.
+- **Pour tout effacer** : supprimer le fichier `instance/historique.db`.
+
+---
+
+## Tests
+
+```bash
 python -m pytest -q
 ```
 
-Les tests sont hors ligne : les modules d'analyse y sont remplacés par des
-fonctions factices.
+Les tests sont **hors ligne** : résolution DNS factice (`tests/conftest.py`),
+serveur HTTP local dans un thread, connexion TLS simulée, pages HTML de
+test (`tests/pages/`), base d'historique temporaire. Aucun test ne
+contacte un site réel.
 
 ---
 
 ## Structure du projet
 
 ```
-webaudit_web/
-├── app.py                 # Application Flask (routes / et /api/scan)
-├── scanner.py             # Ligne de commande
-├── moteur.py              # Moteur d'analyse commun (lancer_scan)
-├── reseau.py              # Filtre anti-SSRF et requête partagée
-├── headers_analyzer.py    # Module d'analyse des en-têtes HTTP (existant)
-├── https_checker.py       # Module de vérification HTTPS/TLS (existant)
-├── cms_detector.py        # Module de détection du CMS (existant)
-├── reporter.py            # Module de calcul du score (existant)
-├── requirements.txt       # Dépendances Python
-├── templates/
-│   └── index.html         # Page unique de l'interface
-└── static/
-    ├── style.css           # Styles (thème "tampon d'audit officiel")
-    └── script.js           # Logique cliente (formulaire, appel API, rendu)
+webaudit/
+├── app.py                  # Interface web Flask : /, /comparer, /api/scan,
+│                           #   /api/history, /api/rapport-pdf
+├── scanner.py              # Ligne de commande
+├── moteur.py               # Moteur d'analyse commun (lancer_scan)
+├── reseau.py               # Filtre anti-SSRF et requête partagée
+├── headers_analyzer.py     # En-têtes HTTP de sécurité
+├── https_checker.py        # HTTPS et certificat TLS
+├── cms_detector.py         # Détection du CMS et de sa version
+├── versions_reference.json # Référentiel daté des versions CMS
+├── reporter.py             # Score et rapport texte
+├── pdf_reporter.py         # Rapport PDF
+├── fiches.py               # Explications et correctifs
+├── historique.py           # Historique SQLite
+├── version.py              # Version de WebAudit
+├── templates/, static/     # Pages, styles et scripts de l'interface
+├── preuves/                # Rapports réels conservés (juillet et octobre 2026)
+└── tests/                  # Tests pytest hors ligne
 ```
 
 ---
 
-## Architecture technique
+## Architecture et sécurité de l'outil
 
-L'application suit une architecture classique client-serveur :
-
-- **Backend (`app.py`)** : expose une route `POST /api/scan` qui reçoit une
-  URL en JSON, la filtre, puis appelle `moteur.lancer_scan`, qui exécute
-  séquentiellement les trois modules d'analyse, calcule le score via
-  `reporter.calculer_score`, et renvoie un
-  rapport JSON allégé (sans les en-têtes bruts complets, non utilisés par
-  l'affichage).
-- **Frontend (`templates/index.html` + `static/`)** : une page unique en
-  HTML/CSS/JavaScript vanilla (aucun framework), qui envoie une requête
-  `fetch()` à `/api/scan` et construit dynamiquement le rapport dans le DOM.
-
-Un filtre anti-SSRF (`reseau.valider_cible`) évite tout usage détourné de
-l'interface web comme sonde du réseau interne du serveur. Il résout le nom
-d'hôte (toutes les adresses IPv4 et IPv6) et refuse la cible si une seule
-adresse n'est pas publique : privée, boucle locale, lien local (dont
-`169.254.169.254`), multidiffusion, réservée, non spécifiée, IPv6 privée
-(`fc00::/7`) ou lien local (`fe80::/10`), adresse IPv4 mappée en IPv6. Le
-filtre porte sur les adresses, pas sur le nom : `10.exemple.com` est
-accepté s'il pointe vers une adresse publique, `localtest.me` est refusé
-parce qu'il pointe vers `127.0.0.1`.
-
-La page est demandée une seule fois par scan (`reseau.recuperer_page`).
-Les redirections sont suivies à la main (5 au maximum) et chaque nouvelle
-adresse est revalidée par le même filtre.
+- **Filtre anti-SSRF** (`reseau.valider_cible`, interface web) : le nom
+  d'hôte est résolu (toutes les adresses IPv4 et IPv6) et la cible est
+  refusée si une seule adresse n'est pas publique (privée, boucle locale,
+  lien local dont `169.254.169.254`, multidiffusion, réservée, non
+  spécifiée, `fc00::/7`, `fe80::/10`, IPv4 mappée en IPv6). Le filtre porte
+  sur les adresses, pas sur le nom : `10.exemple.com` est accepté s'il
+  pointe vers une adresse publique, `localtest.me` est refusé.
+- **Une seule requête** pour la page analysée (`reseau.recuperer_page`) ;
+  les redirections sont suivies à la main (5 au maximum) et chaque
+  nouvelle adresse est revalidée.
+- **Contrôle TLS** sur le port de l'URL (443 par défaut) ; les erreurs de
+  certificat sont classées (expiré, auto-signé, autorité inconnue, nom non
+  couvert…).
+- **CMS** : signatures à deux indices, version lue seulement à des sources
+  fiables, comparée au référentiel `versions_reference.json`.
 
 ---
 
 ## Limites connues
 
+- **En-têtes : présence seulement.** L'outil vérifie qu'un en-tête est
+  présent, pas que sa valeur est sûre (décision de l'auteur).
+- **TLS : version négociée seulement.** L'outil lit la version obtenue lors
+  de la connexion et ne teste pas une à une les versions acceptées par le
+  serveur. Un serveur limité à TLS 1.0 ou 1.1 est signalé par l'échec de la
+  poignée de main, sans confirmation de la version exacte.
+- **CMS : aucune lecture de fichiers caractéristiques** (readme.html,
+  CHANGELOG.txt…). Seule la page d'accueil est analysée.
 - **Rebinding DNS** : entre la validation DNS du filtre anti-SSRF et la
-  connexion elle-même, un nom peut changer d'adresse (un serveur DNS
-  malveillant peut répondre une adresse publique au filtre, puis une
-  adresse interne au moment de la connexion). Le filtre réduit ce risque
+  connexion, un nom peut changer d'adresse. Le filtre réduit ce risque
   sans le supprimer.
-- Le serveur de développement Flask (`app.run(debug=True)`) n'est pas conçu
-  pour la production. Pour un déploiement réel, utiliser un serveur WSGI
-  comme Gunicorn derrière un reverse proxy (Nginx).
-- Le mode `debug=True` doit être désactivé avant tout déploiement public : il
-  expose un débogueur interactif potentiellement dangereux.
-- Chaque scan est synchrone : le navigateur attend la fin des trois modules
-  avant d'afficher le rapport (généralement 1 à 5 secondes selon la cible).
+- **Référentiel des versions CMS à mettre à jour** :
+  `versions_reference.json` est un relevé manuel (14/10/2026) ; il doit
+  être actualisé avant chaque campagne de mesures. Une version plus
+  récente que la référence est signalée « référentiel à mettre à jour ».
+- Le serveur de développement Flask n'est pas conçu pour la production
+  (utiliser un serveur WSGI derrière un reverse proxy pour un déploiement).
+- Chaque scan est synchrone (généralement 1 à 5 secondes).
