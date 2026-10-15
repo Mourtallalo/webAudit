@@ -42,10 +42,12 @@ MOTIFS_CERTIFICAT = {
 }
 
 # Motifs OpenSSL d'une poignée de main refusée pour cause de version (E35).
+# WRONG_VERSION_NUMBER n'en fait pas partie : il signale le plus souvent
+# un service qui ne parle pas TLS du tout sur ce port (HTTP simple, par
+# exemple), classé « https_absent ».
 ERREURS_DE_VERSION = (
     "TLSV1_ALERT_PROTOCOL_VERSION",
     "UNSUPPORTED_PROTOCOL",
-    "WRONG_VERSION_NUMBER",
     "NO_PROTOCOLS_AVAILABLE",
     "VERSION_TOO_LOW",
 )

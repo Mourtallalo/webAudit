@@ -38,6 +38,7 @@ from reportlab.platypus import (
 )
 
 from fiches import FICHES, NOMS_MODULES
+from reporter import message_audit_partiel
 from version import VERSION
 
 # ---------------------------------------------------------------------------
@@ -189,7 +190,8 @@ def _severite_de_la_note(note):
 # Blocs du document
 # ---------------------------------------------------------------------------
 
-def _entete(url, score, duree, moment, url_finale=None, version_outil=None, date_referentiel=None):
+def _entete(url, score, duree, moment, url_finale=None, version_outil=None, date_referentiel=None,
+            remarque=None):
     """Bandeau de tête : cible, date, note globale et décompte."""
     hote = str(url or "").replace("https://", "").replace("http://", "")
     decompte = score.get("decompte", {})
@@ -211,6 +213,9 @@ def _entete(url, score, duree, moment, url_finale=None, version_outil=None, date
         except ValueError:
             date_lisible = str(date_referentiel)
         identite.append(_p("Versions CMS : référence relevée le {}".format(date_lisible), S_META))
+    if remarque:
+        # E36 : par exemple, page récupérée sans vérification du certificat.
+        identite.append(_p("Remarque : {}.".format(remarque), S_META))
 
     bandeau = Table(
         [[identite, Tampon(score.get("note") or "—", score.get("points", 0), couleur)]],
@@ -253,14 +258,10 @@ def _entete(url, score, duree, moment, url_finale=None, version_outil=None, date
     # bas de page : la note ne porte alors que sur ce qui a abouti.
     if not score.get("complet", True):
         avertissement = SEVERITES["AVERTISSEMENT"]
-        manquants = ", ".join(
+        message = message_audit_partiel(
             NOMS_MODULES.get(m, m) for m in score.get("modules_non_executes", []))
 
-        encart = Table([[Paragraph(
-            '<b>Audit partiel.</b> Le score ne porte que sur les contrôles qui ont '
-            'abouti : {} n\'a pas répondu dans le délai imparti. La note ne vaut donc '
-            'pas quitus — relancez l\'audit avant de conclure.'.format(escape(manquants)),
-            S_CORPS)]], colWidths=[LARGEUR_UTILE])
+        encart = Table([[_p(message, S_CORPS)]], colWidths=[LARGEUR_UTILE])
         encart.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, -1), avertissement["fond"]),
             ("BOX", (0, 0), (-1, -1), 0.8, avertissement["couleur"]),
@@ -415,7 +416,7 @@ def _habillage(canevas, doc):
 # ---------------------------------------------------------------------------
 
 def generer_rapport_pdf(url, modules, score, duree, date_scan=None, url_finale=None,
-                        version_outil=None, date_referentiel=None):
+                        version_outil=None, date_referentiel=None, remarque=None):
     """
     Construit le rapport PDF et retourne son contenu binaire.
 
@@ -429,6 +430,7 @@ def generer_rapport_pdf(url, modules, score, duree, date_scan=None, url_finale=N
     url_finale : str     URL finale analysée après les redirections
     version_outil : str  version de WebAudit qui a produit le scan
     date_referentiel : str  date ISO du référentiel des versions CMS
+    remarque : str       remarque du scan (page récupérée sans vérification…)
 
     Retour
     ------
@@ -453,7 +455,8 @@ def generer_rapport_pdf(url, modules, score, duree, date_scan=None, url_finale=N
     )
 
     histoire = []
-    histoire.extend(_entete(url, score, duree, moment, url_finale, version_outil, date_referentiel))
+    histoire.extend(_entete(url, score, duree, moment, url_finale, version_outil, date_referentiel,
+                            remarque))
 
     # --- Détail par catégorie ----------------------------------------------
     histoire.append(_p("Détail par catégorie", S_SECTION))

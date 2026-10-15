@@ -2,7 +2,16 @@
 
 Version de référence : étiquette `v1.0-mesures-2026-10-14` (commit
 `d7bfbee`, interface web des mesures du 14/10/2026 et ligne de commande de
-juillet 2026). Version actuelle : `v2.0.1`.
+juillet 2026). Version actuelle : `v2.0.2`.
+
+## v2.0.2 — correctif d'affichage et de diagnostic (lot E)
+
+| Identifiant | Ce qui a changé | Fichier(s) | Commit(s) |
+|---|---|---|---|
+| E35 | `WRONG_VERSION_NUMBER` n'est plus une version refusée : un service non TLS sur le port HTTPS donne « Disponibilité HTTPS » CRITIQUE avec le message d'erreur, sans observation de version. | `https_checker.py`, `tests/test_https.py` | commit de l'étiquette `v2.0.2` |
+| E36 | La remarque « Page récupérée sans vérification du certificat… » est visible à l'écran (encart sous le score) et dans le PDF (en-tête) ; `/api/rapport-pdf` la transmet. | `templates/index.html`, `static/script.js`, `pdf_reporter.py`, `app.py`, `tests/test_rapports.py` | commit de l'étiquette `v2.0.2` |
+| C27 | Message d'audit partiel unique (écran, PDF, rapport texte, page Comparer) : plus de « délai imparti » ni de « sans réponse » ; aucune note, points sur les contrôles aboutis. | `reporter.py`, `pdf_reporter.py`, `static/commun.js`, `static/script.js`, `static/comparer.js`, `tests/test_rapports.py` | commit de l'étiquette `v2.0.2` |
+| — | Version de l'outil 2.0.2. | `version.py`, `tests/test_rapports.py` | commit de l'étiquette `v2.0.2` |
 
 ## v2.0.1 — correctif (lot D)
 

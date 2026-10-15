@@ -1,4 +1,4 @@
-# WebAudit 2.0.1
+# WebAudit 2.0.2
 
 Scanner de vulnérabilités web élémentaires, développé dans le cadre du
 mémoire de fin de Licence 3 Réseaux et Télécommunications (ESTM 2025-2026,
@@ -142,12 +142,25 @@ le module HTTPS sait classer le problème.
   `remarque`) et le rapport texte indiquent : « Page récupérée sans
   vérification du certificat, celui-ci ayant été refusé (voir le module
   HTTPS) ». Le module HTTPS donne « Validité du certificat » CRITIQUE avec
-  le motif précis. L'audit est **complet** (points et note).
+  le motif précis. L'audit est **complet** (points et note). Cette remarque
+  s'affiche aussi **à l'écran** (encart sous le score) et **dans le PDF**
+  (en-tête).
 - **Autre erreur TLS** (version refusée, poignée de main impossible) :
   audit **partiel**. Les modules d'en-têtes et CMS sont en erreur (« Page
   non récupérée : … ») ; le module HTTPS s'exécute et produit son
   observation (par exemple « Le serveur refuse TLS 1.2 et 1.3… »). Des
   points, sans note.
+- **Service non TLS sur le port HTTPS** (par exemple un serveur HTTP
+  simple, erreur OpenSSL `WRONG_VERSION_NUMBER`) : ce port ne parle pas
+  TLS. Le module HTTPS donne « Disponibilité HTTPS » CRITIQUE avec le
+  message d'erreur, sans observation « Version du protocole TLS ».
+
+Un audit partiel s'annonce partout (écran, PDF, rapport texte, page
+Comparer) par le même message : « Audit partiel : <module(s)> n'a pas
+abouti / n'ont pas abouti. Aucune note n'est attribuée ; les points ne
+portent que sur les contrôles qui ont abouti. Relancez l'audit avant de
+conclure. » La cause (délai, erreur TLS, redirection refusée…) reste
+affichée dans la carte de chaque module.
 
 Le JSON contient : `url` (URL saisie), `url_finale` (après les
 redirections, parcours complet dans `redirections`), `hote_tls`, `statut`,

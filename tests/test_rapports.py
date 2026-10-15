@@ -21,6 +21,23 @@ from version import VERSION
 
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+REMARQUE = "Page récupérée sans vérification du certificat, celui-ci ayant été refusé (voir le module HTTPS)"
+
+
+def texte_pdf(pdf):
+    """
+    Texte d'un PDF non compressé : contenu des opérateurs Tj, caractères
+    échappés (octal, parenthèses) décodés, lignes recollées.
+    """
+    contenu = pdf.decode("latin-1")
+    morceaux = re.findall(r"\((.*?)(?<!\\)\) Tj", contenu)
+
+    def decoder(morceau):
+        morceau = re.sub(r"\\([0-7]{3})", lambda m: chr(int(m.group(1), 8)), morceau)
+        return morceau.replace("\\(", "(").replace("\\)", ")").replace("\\\\", "\\")
+
+    return " ".join(" ".join(decoder(m) for m in morceaux).split())
+
 CSP_LONGUE = ("default-src 'self'; script-src 'self' https://cdn.exemple.test https://stats.exemple.test; "
               "style-src 'self' 'unsafe-inline' https://polices.exemple.test; img-src 'self' data: "
               "https://images.exemple.test; connect-src 'self' https://api.exemple.test; frame-ancestors 'none'")
@@ -100,14 +117,14 @@ def test_version_et_referentiel_dans_le_rapport_texte():
 # ---------------------------------------------------------------------------
 
 def test_version_dans_le_json(tmp_path, capsys):
-    assert VERSION == "2.0.1"
+    assert VERSION == "2.0.2"
     with pytest.raises(SystemExit):
         scanner.main(["--autorise", "inexistant.test", "--json", str(tmp_path / "r.json")])
     donnees = json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))
-    assert donnees["version_outil"] == "2.0.1"
+    assert donnees["version_outil"] == "2.0.2"
     assert donnees["date_referentiel_cms"] == "2026-10-14"
     web = application.app.test_client().post("/api/scan", json={"autorisation": True, "url": "inexistant.test"}).get_json()
-    assert web["version_outil"] == "2.0.1"
+    assert web["version_outil"] == "2.0.2"
 
 
 # ---------------------------------------------------------------------------
@@ -140,7 +157,76 @@ def test_pdf_depuis_l_api_transmet_les_champs(monkeypatch):
     reponse = application.app.test_client().post("/api/rapport-pdf", json=corps)
     assert reponse.status_code == 200
     assert recu == {"url_finale": "https://www.exemple.test/", "version_outil": "2.0.0",
-                    "date_referentiel": "2026-10-14"}
+                    "date_referentiel": "2026-10-14", "remarque": None}
+
+    corps["remarque"] = REMARQUE
+    assert application.app.test_client().post("/api/rapport-pdf", json=corps).status_code == 200
+    assert recu["remarque"] == REMARQUE
+
+
+def test_pdf_affiche_la_remarque(monkeypatch):
+    monkeypatch.setattr(rl_config, "pageCompression", 0)
+    pdf = generer_rapport_pdf("https://exemple.test", MODULES, calculer_score(MODULES), 1.5,
+                              "2026-10-14T12:00:00+00:00", remarque=REMARQUE)
+    assert "Remarque : " + REMARQUE + "." in texte_pdf(pdf)
+    sans = generer_rapport_pdf("https://exemple.test", MODULES, calculer_score(MODULES), 1.5,
+                               "2026-10-14T12:00:00+00:00")
+    assert "Remarque" not in texte_pdf(sans)
+
+
+# ---------------------------------------------------------------------------
+# C27 : message d'audit partiel, même sens partout
+# ---------------------------------------------------------------------------
+
+MODULES_PARTIELS = MODULES[:2] + [{"module": "Detection CMS", "statut": "erreur",
+                                   "message": "Page non récupérée : erreur TLS.", "observations": []}]
+
+MESSAGE_PARTIEL = ("Audit partiel : Détection du CMS n'a pas abouti. Aucune note n'est attribuée ; "
+                   "les points ne portent que sur les contrôles qui ont abouti. "
+                   "Relancez l'audit avant de conclure.")
+
+
+def test_message_partiel_singulier_et_pluriel():
+    from reporter import message_audit_partiel
+    assert message_audit_partiel(["Détection du CMS"]) == MESSAGE_PARTIEL
+    assert message_audit_partiel(["En-têtes HTTP de sécurité", "Détection du CMS"]).startswith(
+        "Audit partiel : En-têtes HTTP de sécurité et Détection du CMS n'ont pas abouti. ")
+
+
+def test_rapport_texte_partiel_sans_delai_ni_sans_reponse():
+    score = calculer_score(MODULES_PARTIELS)
+    texte = generer_rapport_texte("https://exemple.test", MODULES_PARTIELS, score, 1.0,
+                                  "2026-10-14T12:00:00+00:00")
+    assert MESSAGE_PARTIEL in " ".join(texte.split())
+    for formulation in ("délai imparti", "sans réponse", "dans le délai"):
+        assert formulation not in texte
+    # La cause reste affichée dans la carte du module.
+    assert "Page non récupérée : erreur TLS." in texte
+
+
+def test_pdf_partiel_sans_delai_ni_sans_reponse(monkeypatch):
+    monkeypatch.setattr(rl_config, "pageCompression", 0)
+    pdf = generer_rapport_pdf("https://exemple.test", MODULES_PARTIELS, calculer_score(MODULES_PARTIELS),
+                              1.0, "2026-10-14T12:00:00+00:00")
+    texte = texte_pdf(pdf)
+    assert MESSAGE_PARTIEL in texte
+    for formulation in ("délai imparti", "sans réponse", "dans le délai", "quitus"):
+        assert formulation not in texte
+
+
+def test_interface_meme_message():
+    """commun.js porte le même texte que reporter.message_audit_partiel."""
+    with open(os.path.join(RACINE, "static", "commun.js"), encoding="utf-8") as f:
+        commun = f.read()
+    for fragment in ("n'a pas abouti", "n'ont pas abouti", "Aucune note n'est attribuée ; ",
+                     "les points ne portent que sur les contrôles qui ont abouti. ",
+                     "Relancez l'audit avant de conclure."):
+        assert fragment in commun
+    for nom in ("script.js", "comparer.js", "commun.js"):
+        with open(os.path.join(RACINE, "static", nom), encoding="utf-8") as f:
+            source = f.read()
+        for formulation in ("délai imparti", "sans réponse dans le délai", "délai de 10 secondes"):
+            assert formulation not in source, (nom, formulation)
 
 
 # ---------------------------------------------------------------------------

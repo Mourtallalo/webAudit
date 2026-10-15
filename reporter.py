@@ -41,6 +41,26 @@ SYMBOLES = {
 }
 
 
+def message_audit_partiel(modules):
+    """
+    Message d'audit partiel, identique à l'écran, dans le PDF et dans le
+    rapport texte (C27). La cause de l'échec reste affichée dans la carte
+    de chaque module : elle n'est pas répétée ici.
+
+    Paramètres
+    ----------
+    modules : list
+        Libellés lisibles des modules qui n'ont pas abouti.
+    """
+    noms = list(modules) or ["un module"]
+    if len(noms) == 1:
+        sujet, verbe = noms[0], "n'a pas abouti"
+    else:
+        sujet, verbe = ", ".join(noms[:-1]) + " et " + noms[-1], "n'ont pas abouti"
+    return ("Audit partiel : {} {}. Aucune note n'est attribuée ; les points ne portent "
+            "que sur les contrôles qui ont abouti. Relancez l'audit avant de conclure.").format(sujet, verbe)
+
+
 def calculer_score(resultats):
     """
     Calcule un score de sécurité global à partir de l'ensemble des observations.
@@ -217,10 +237,9 @@ def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_fina
     # juste sous le score, pas en note de bas de page.
     if not score.get("complet", True):
         lignes.append("")
-        lignes.append("  AUDIT PARTIEL : le score ne porte que sur les contrôles")
-        lignes.append("  qui ont abouti. Module(s) sans réponse : {}.".format(
-            ", ".join(score.get("modules_non_executes", []))))
-        lignes.append("  Relancez l'audit avant de conclure.")
+        lignes.extend(textwrap.wrap(
+            message_audit_partiel(NOMS_MODULES.get(m, m) for m in score.get("modules_non_executes", [])),
+            width=largeur, initial_indent="  ", subsequent_indent="  "))
     lignes.append("")
 
     # --- Détail par module -------------------------------------------------

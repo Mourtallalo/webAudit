@@ -421,9 +421,7 @@ function construireTableau(lignes) {
     note.appendChild(badge);
     if (ligne.partiel) {
       const marque = creer("span", "marque-partiel", "partiel");
-      marque.title = "Modules sans réponse dans le délai : " + ligne.modulesKo.join(", ")
-                   + ". Ces contrôles ne sont pas comptés, donc le score est flatteur "
-                   + "et aucune note n'est attribuée.";
+      marque.title = messageAuditPartiel(ligne.modulesKo);
       note.appendChild(marque);
     }
     tr.appendChild(note);
@@ -495,8 +493,9 @@ function afficherClassement() {
   }
   $("classement-resume").textContent = morceaux.join(" · ");
 
-  // Rappel explicite quand des mesures manquent : une note basse due a
-  // un depassement de delai ne dit rien de la securite du site.
+  // Rappel explicite quand des mesures manquent : un contrôle qui n'a pas
+  // abouti (délai, erreur TLS, redirection refusée…) ne dit rien de la
+  // sécurité du site.
   const avis = $("avis-partiel");
   if (avis) {
     avis.hidden = partiels === 0;
@@ -506,11 +505,11 @@ function afficherClassement() {
       // du piège habituel, et c'est pour cela qu'aucune note n'est posée.
       $("avis-partiel-texte").textContent =
         partiels > 1
-          ? partiels + " sites n'ont pas répondu à tous les contrôles dans le délai de 10 secondes. "
+          ? partiels + " sites n'ont pas pu être audités sur tous les contrôles. "
             + "Aucune note ne leur est attribuée : leur score ne porte que sur les contrôles "
             + "aboutis, il est donc flatteur et n'est pas comparable aux autres. Ils sont exclus "
             + "du podium. Relancez leur audit avant de conclure."
-          : "Un site n'a pas répondu à tous les contrôles dans le délai de 10 secondes. "
+          : "Un site n'a pas pu être audité sur tous les contrôles. "
             + "Aucune note ne lui est attribuée : son score ne porte que sur les contrôles "
             + "aboutis, il est donc flatteur et n'est pas comparable aux autres. Il est exclu "
             + "du podium. Relancez son audit avant de conclure.";

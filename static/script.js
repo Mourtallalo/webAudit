@@ -462,11 +462,15 @@ function afficherResultats(data) {
         (data.modules || []).filter((m) => m.statut === "erreur").map((m) => m.module))
         .map((nom) => NOMS_MODULES[nom] || nom);
 
-      $("avis-partiel-texte").textContent =
-        "Audit partiel : " + manquants.join(" et ") + " n'a pas répondu dans le délai "
-        + "imparti. La note ne porte que sur les contrôles qui ont abouti — elle ne vaut "
-        + "pas quitus. Relancez l'audit avant de conclure.";
+      $("avis-partiel-texte").textContent = messageAuditPartiel(manquants);
     }
+  }
+
+  // E36 : remarque du scan (page récupérée sans vérification du certificat…).
+  const avisRemarque = $("avis-remarque");
+  if (avisRemarque) {
+    avisRemarque.hidden = !data.remarque;
+    $("avis-remarque-texte").textContent = data.remarque ? data.remarque + "." : "";
   }
 
   modulesContainer.innerHTML = "";

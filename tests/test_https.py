@@ -146,8 +146,7 @@ def test_certificat_refuse_version_illisible(connexion):
 # E35 : versions refusées
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("motif_openssl", [
-    "TLSV1_ALERT_PROTOCOL_VERSION", "UNSUPPORTED_PROTOCOL", "WRONG_VERSION_NUMBER"])
+@pytest.mark.parametrize("motif_openssl", ["TLSV1_ALERT_PROTOCOL_VERSION", "UNSUPPORTED_PROTOCOL"])
 def test_version_de_protocole_refusee(connexion, motif_openssl):
     connexion["verifiee"] = ssl.SSLError(1, "[SSL: {}] erreur simulée (_ssl.c:1000)".format(motif_openssl))
     resultat = https_checker.verifier_https("https://exemple.test")
@@ -158,6 +157,20 @@ def test_version_de_protocole_refusee(connexion, motif_openssl):
         "message": "Le serveur refuse TLS 1.2 et 1.3 : il ne propose probablement que "
                    "TLS 1.0 ou 1.1 (non confirmé par l'outil).",
     }]
+
+
+def test_service_non_tls_sur_le_port_https(connexion):
+    """WRONG_VERSION_NUMBER : le port ne parle pas TLS (HTTP simple, par exemple)."""
+    connexion["verifiee"] = ssl.SSLError(
+        1, "[SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1000)")
+    resultat = https_checker.verifier_https("https://exemple.test")
+    obs = observations(resultat)
+    assert resultat["details"]["certificat"]["etat"] == "https_absent"
+    niveau, message = obs["Disponibilité HTTPS"]
+    assert niveau == "CRITIQUE"
+    assert message.startswith("Le site n'est PAS accessible en HTTPS (port 443).")
+    assert "WRONG_VERSION_NUMBER" in message
+    assert "Version du protocole TLS" not in obs
 
 
 def test_autre_erreur_tls_https_non_disponible(connexion):

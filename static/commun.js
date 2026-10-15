@@ -47,6 +47,22 @@ const NOMS_MODULES = {
 
 const $ = (id) => document.getElementById(id);
 
+/**
+ * Message d'audit partiel, identique à l'écran, dans le PDF et dans le
+ * rapport texte (reporter.message_audit_partiel, C27). La cause de
+ * l'échec reste affichée dans la carte de chaque module.
+ */
+function messageAuditPartiel(noms) {
+  const liste = noms.length ? noms : ["un module"];
+  const sujet = liste.length === 1
+    ? liste[0]
+    : liste.slice(0, -1).join(", ") + " et " + liste[liste.length - 1];
+  const verbe = liste.length === 1 ? "n'a pas abouti" : "n'ont pas abouti";
+  return "Audit partiel : " + sujet + " " + verbe + ". Aucune note n'est attribuée ; "
+    + "les points ne portent que sur les contrôles qui ont abouti. "
+    + "Relancez l'audit avant de conclure.";
+}
+
 function creer(balise, classe, texte) {
   const el = document.createElement(balise);
   if (classe) el.className = classe;
