@@ -49,6 +49,18 @@ def dns(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def sans_proxy(monkeypatch):
+    """
+    Retire les mandataires de l'environnement pendant les tests : sur une
+    machine qui passe par un proxy, requests y enverrait les requêtes
+    destinées aux serveurs locaux de test.
+    """
+    for nom in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"):
+        monkeypatch.delenv(nom, raising=False)
+        monkeypatch.delenv(nom.lower(), raising=False)
+
+
+@pytest.fixture(autouse=True)
 def base_historique(tmp_path, monkeypatch):
     """Chaque test écrit dans sa propre base d'historique, jamais dans instance/."""
     import historique

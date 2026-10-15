@@ -29,6 +29,11 @@ from reporter import calculer_score, generer_rapport_texte, generer_rapport_impo
 from reseau import recuperer_page, ErreurRecuperation
 from version import VERSION
 
+# Mention ajoutée au JSON et au rapport texte quand la page a dû être
+# récupérée sans vérification du certificat (E36).
+REMARQUE_SANS_VERIFICATION = (
+    "Page récupérée sans vérification du certificat, celui-ci ayant été refusé (voir le module HTTPS)")
+
 
 def normaliser_url(url):
     """S'assure que l'URL commence par un schéma. Préfixe avec https:// par défaut."""
@@ -54,14 +59,19 @@ def lancer_scan(url, timeout=10, autoriser_local=False):
       - « complet »    : tous les modules ont abouti ; points et note ;
       - « partiel »    : la cible répond mais un module est en erreur ;
                          des points, sans note (reporter.calculer_score) ;
-      - « impossible » : la page n'a pas pu être récupérée (cible
-                         injoignable, E15) ; ni points ni note, et un motif.
+      - « impossible » : la cible est injoignable (nom introuvable,
+                         connexion refusée, délai dépassé, E15) ; ni points
+                         ni note, et un motif.
+
+    Un certificat refusé ne rend pas le scan impossible : la page est
+    récupérée sans vérification (clé « remarque »). Une autre erreur TLS
+    (version refusée…) donne un audit partiel (E36, E35).
 
     Retour
     ------
     dict : {url, url_finale, redirections, hote_tls, statut, motif,
-    version_outil, date_referentiel_cms, date_scan, duree, score, modules,
-    rapport_texte}, soit exactement la réponse de /api/scan.
+    remarque, version_outil, date_referentiel_cms, date_scan, duree, score,
+    modules, rapport_texte}, soit exactement la réponse de /api/scan.
     """
     url = normaliser_url(url)
 
@@ -71,16 +81,28 @@ def lancer_scan(url, timeout=10, autoriser_local=False):
     date_scan = datetime.now().astimezone().isoformat(timespec="seconds")
 
     # --- Récupération unique de la page (E42) -------------------------------
-    reponse, parcours, erreur_page = None, [], None
+    reponse, parcours, erreur_page, remarque = None, [], None, None
     try:
-        reponse, parcours = recuperer_page(url, timeout, autoriser_local)
+        try:
+            reponse, parcours = recuperer_page(url, timeout, autoriser_local)
+        except ErreurRecuperation as e:
+            if e.type_erreur != "certificat_refuse":
+                raise
+            # E36 : le certificat est refusé, mais le serveur répond. La page
+            # est récupérée une seconde fois sans vérification, avec les mêmes
+            # règles (redirections revalidées), pour analyser en-têtes et CMS ;
+            # le module HTTPS classe l'erreur de certificat.
+            reponse, parcours = recuperer_page(url, timeout, autoriser_local, verifier_certificat=False)
+            remarque = REMARQUE_SANS_VERIFICATION
     except ErreurRecuperation as e:
-        # Cible injoignable, ou refusée dès la première adresse : rien
-        # ne peut être mesuré, le scan est impossible.
+        # Cible injoignable (nom introuvable, connexion refusée, délai
+        # dépassé), ou refusée dès la première adresse : rien ne peut être
+        # mesuré, le scan est impossible.
         if e.injoignable or not e.parcours:
             return _scan_impossible(url, e, debut, date_scan)
         # La cible a répondu, mais la page finale n'a pas pu être obtenue
-        # (redirection refusée, trop de redirections) : audit partiel.
+        # (erreur TLS autre qu'un certificat refusé, redirection refusée,
+        # trop de redirections) : audit partiel.
         parcours, erreur_page = e.parcours, e
 
     if reponse is not None:
@@ -104,7 +126,8 @@ def lancer_scan(url, timeout=10, autoriser_local=False):
     duree = round(time.time() - debut, 2)
     score = calculer_score(resultats)
     rapport_texte = generer_rapport_texte(url, resultats, score, duree, date_scan,
-                                          url_finale=url_finale, hote_tls=hote_tls_lisible)
+                                          url_finale=url_finale, hote_tls=hote_tls_lisible,
+                                          remarque=remarque)
 
     # On retire les en-têtes bruts complets : ils ne sont pas affichés et
     # peuvent être volumineux. En revanche « details » est conservé : il est
@@ -120,6 +143,7 @@ def lancer_scan(url, timeout=10, autoriser_local=False):
         "hote_tls": hote_tls,
         "statut": "complet" if score["complet"] else "partiel",
         "motif": None,
+        "remarque": remarque,
         "version_outil": VERSION,
         "date_referentiel_cms": cms_detector.REFERENTIEL["date_releve"],
         "date_scan": date_scan,
@@ -148,6 +172,7 @@ def _scan_impossible(url, erreur, debut, date_scan):
         "hote_tls": None,
         "statut": "impossible",
         "motif": erreur.motif,
+        "remarque": None,
         "version_outil": VERSION,
         "date_referentiel_cms": cms_detector.REFERENTIEL["date_releve"],
         "date_scan": date_scan,

@@ -1,4 +1,4 @@
-# WebAudit 2.0.0
+# WebAudit 2.0.1
 
 Scanner de vulnérabilités web élémentaires, développé dans le cadre du
 mémoire de fin de Licence 3 Réseaux et Télécommunications (ESTM 2025-2026,
@@ -126,13 +126,32 @@ Issue d'un scan (champ `statut`) :
 - `complet` : les trois modules ont abouti ; points et note ;
 - `partiel` : la cible répond mais un module n'a pas abouti ; des points,
   **sans note** ;
-- `impossible` : la page n'a pas pu être récupérée (nom de domaine
-  introuvable, connexion refusée, délai dépassé, erreur TLS) ; ni points ni
-  note, et le champ `motif` explique pourquoi.
+- `impossible` : la cible est injoignable (nom de domaine introuvable,
+  connexion refusée, délai dépassé) ; ni points ni note, et le champ
+  `motif` explique pourquoi.
+
+### Certificat invalide ou version TLS refusée
+
+Une erreur TLS ne rend jamais le scan « impossible » : la cible répond, et
+le module HTTPS sait classer le problème.
+
+- **Certificat refusé** (expiré, auto-signé, autorité inconnue, nom non
+  couvert…) : la page est récupérée une seconde fois **sans vérification
+  du certificat**, avec les mêmes règles (redirections revalidées par le
+  filtre), pour analyser les en-têtes et le CMS. Le JSON (champ
+  `remarque`) et le rapport texte indiquent : « Page récupérée sans
+  vérification du certificat, celui-ci ayant été refusé (voir le module
+  HTTPS) ». Le module HTTPS donne « Validité du certificat » CRITIQUE avec
+  le motif précis. L'audit est **complet** (points et note).
+- **Autre erreur TLS** (version refusée, poignée de main impossible) :
+  audit **partiel**. Les modules d'en-têtes et CMS sont en erreur (« Page
+  non récupérée : … ») ; le module HTTPS s'exécute et produit son
+  observation (par exemple « Le serveur refuse TLS 1.2 et 1.3… »). Des
+  points, sans note.
 
 Le JSON contient : `url` (URL saisie), `url_finale` (après les
 redirections, parcours complet dans `redirections`), `hote_tls`, `statut`,
-`motif`, `version_outil`, `date_referentiel_cms`, `date_scan`, `duree`,
+`motif`, `remarque`, `version_outil`, `date_referentiel_cms`, `date_scan`, `duree`,
 `score`, `modules`, `rapport_texte`. Le rapport texte et le PDF indiquent
 la version de WebAudit, l'URL finale et la date du référentiel des
 versions CMS.

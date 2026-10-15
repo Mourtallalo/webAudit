@@ -17,10 +17,13 @@ Mémoire de fin de Licence 3 Réseaux et Télécommunications - ESTM 2025-2026
 """
 
 import socket
+import ssl
 import ipaddress
+import warnings
 from urllib.parse import urlparse, urljoin
 
 import requests
+import urllib3
 
 
 # User-Agent historique du module d'en-têtes, désormais commun à toutes
@@ -33,8 +36,10 @@ MAX_REDIRECTIONS = 5
 MOTIF_NOM_INTROUVABLE = "nom de domaine introuvable"
 
 # Types d'erreur pour lesquels la cible est considérée comme injoignable :
-# le scan est alors « impossible » (aucun point, aucune note).
-TYPES_INJOIGNABLE = ("nom_introuvable", "connexion_refusee", "delai_depasse", "erreur_tls")
+# le scan est alors « impossible » (aucun point, aucune note). Une erreur
+# TLS n'en fait pas partie : la cible répond, et le module HTTPS sait
+# classer le problème (E36, E35).
+TYPES_INJOIGNABLE = ("nom_introuvable", "connexion_refusee", "delai_depasse")
 
 
 class ErreurRecuperation(Exception):
@@ -42,7 +47,8 @@ class ErreurRecuperation(Exception):
     Échec de la récupération d'une page.
 
     type_erreur : nom_introuvable, connexion_refusee, delai_depasse,
-                  erreur_tls, cible_refusee, trop_de_redirections,
+                  certificat_refuse, erreur_tls, cible_refusee,
+                  trop_de_redirections,
                   erreur_requete.
     motif       : explication lisible, en français.
     parcours    : URL déjà demandées avant l'échec.
@@ -147,12 +153,32 @@ def valider_cible(url, autoriser_local=False):
     return True, ""
 
 
-def recuperer_page(url, timeout, autoriser_local=False):
+def _certificat_refuse(erreur):
+    """True si l'erreur TLS vient du refus du certificat (et non de la poignée de main)."""
+    vues = set()
+    courante = erreur
+    while courante is not None and id(courante) not in vues:
+        vues.add(id(courante))
+        if isinstance(courante, ssl.SSLCertVerificationError):
+            return True
+        # requests et urllib3 emballent l'erreur d'origine : on suit la chaîne.
+        suivantes = [courante.__cause__, courante.__context__] + [
+            a for a in getattr(courante, "args", ()) if isinstance(a, BaseException)]
+        suivantes += [getattr(courante, "reason", None)]
+        courante = next((s for s in suivantes if isinstance(s, BaseException) and id(s) not in vues), None)
+    return "CERTIFICATE_VERIFY_FAILED" in str(erreur).upper()
+
+
+def recuperer_page(url, timeout, autoriser_local=False, verifier_certificat=True):
     """
     Récupère la page par une requête GET, en suivant les redirections à la main.
 
     Chaque adresse (la première comme chaque redirection) est validée par
     valider_cible avant d'être demandée ; MAX_REDIRECTIONS au plus.
+
+    verifier_certificat=False désactive la vérification du certificat
+    (verify=False) : le moteur ne s'en sert qu'après un refus du
+    certificat, pour analyser quand même la page (E36).
 
     Retour
     ------
@@ -173,13 +199,22 @@ def recuperer_page(url, timeout, autoriser_local=False):
         parcours.append(courante)
 
         try:
-            reponse = requests.get(
-                courante,
-                timeout=timeout,
-                headers={"User-Agent": USER_AGENT},
-                allow_redirects=False,
-            )
+            with warnings.catch_warnings():
+                # Sans vérification, urllib3 avertit à chaque requête :
+                # l'avertissement est neutralisé ici seulement, le moteur
+                # signalant lui-même la situation dans le rapport.
+                warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+                reponse = requests.get(
+                    courante,
+                    timeout=timeout,
+                    headers={"User-Agent": USER_AGENT},
+                    allow_redirects=False,
+                    verify=verifier_certificat,
+                )
         except requests.exceptions.SSLError as e:
+            if _certificat_refuse(e):
+                raise ErreurRecuperation(
+                    "certificat_refuse", "certificat refusé : {}".format(e), parcours)
             raise ErreurRecuperation(
                 "erreur_tls", "erreur TLS : impossible d'établir une connexion sécurisée ({})".format(e),
                 parcours)

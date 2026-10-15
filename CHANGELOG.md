@@ -2,7 +2,18 @@
 
 Version de référence : étiquette `v1.0-mesures-2026-10-14` (commit
 `d7bfbee`, interface web des mesures du 14/10/2026 et ligne de commande de
-juillet 2026). Version actuelle : `v2.0.0`.
+juillet 2026). Version actuelle : `v2.0.1`.
+
+## v2.0.1 — correctif (lot D)
+
+| Identifiant | Ce qui a changé | Fichier(s) | Commit(s) |
+|---|---|---|---|
+| E36 | Un certificat refusé n'est plus une cible injoignable : type `certificat_refuse` dans `recuperer_page` ; la page est récupérée une seconde fois sans vérification (avertissement urllib3 neutralisé localement, redirections revalidées) ; mention dans le JSON (`remarque`) et le rapport texte ; audit complet, « Validité du certificat » CRITIQUE. | `reseau.py`, `moteur.py`, `reporter.py`, `README.md`, `tests/test_erreurs_tls.py` | commit de l'étiquette `v2.0.1` |
+| E35 | Les autres erreurs TLS (version refusée, poignée de main impossible) donnent un audit partiel : en-têtes et CMS en erreur, module HTTPS exécuté (« Le serveur refuse TLS 1.2 et 1.3… »). | `reseau.py`, `moteur.py`, `tests/test_erreurs_tls.py` | commit de l'étiquette `v2.0.1` |
+| E15 | `erreur_tls` retiré de `TYPES_INJOIGNABLE` : seuls un nom introuvable, une connexion refusée ou un délai dépassé rendent le scan impossible. | `reseau.py`, `moteur.py` | commit de l'étiquette `v2.0.1` |
+| — | Tests : fixture automatique qui retire HTTP_PROXY, HTTPS_PROXY et ALL_PROXY (et leurs formes en minuscules) ; `c1.json` supprimé ; version de l'outil 2.0.1. | `tests/conftest.py`, `version.py` | commit de l'étiquette `v2.0.1` |
+
+## v2.0.0
 
 | Identifiant | Ce qui a changé | Fichier(s) | Commit(s) |
 |---|---|---|---|

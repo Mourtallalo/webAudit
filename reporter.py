@@ -178,7 +178,8 @@ def generer_rapport_impossible(url, motif, duree, date_scan=None, url_finale=Non
     return "\n".join(lignes)
 
 
-def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_finale=None, hote_tls=None):
+def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_finale=None, hote_tls=None,
+                          remarque=None):
     """
     Produit un rapport texte formaté et lisible.
 
@@ -188,6 +189,11 @@ def generer_rapport_texte(url, resultats, score, duree, date_scan=None, url_fina
     """
     largeur = LARGEUR_RAPPORT
     lignes = _entete_rapport(url, duree, date_scan, url_finale, hote_tls)
+    # E36 : page récupérée sans vérification du certificat, par exemple.
+    if remarque:
+        lignes.extend(textwrap.wrap("Remarque : {}.".format(remarque), width=largeur,
+                                    subsequent_indent="           "))
+        lignes.append("")
 
     # --- Score global ------------------------------------------------------
     lignes.append("-" * largeur)
