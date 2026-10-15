@@ -114,6 +114,7 @@ def test_aucun_message_ne_pretend_tester_toutes_les_versions(connexion):
     (20, "autorité de certification inconnue ou chaîne de certificats incomplète"),
     (21, "autorité de certification inconnue ou chaîne de certificats incomplète"),
     (62, "le nom d'hôte n'est pas couvert par le certificat"),
+    (64, "l'adresse IP n'est pas couverte par le certificat"),
     (26, "certificat refusé (unsuitable certificate purpose)"),
 ])
 def test_erreurs_de_certificat(connexion, code, motif):
@@ -189,7 +190,6 @@ def test_autre_erreur_tls_https_non_disponible(connexion):
     (socket.timeout("timed out"), "délai dépassé lors de la connexion TLS (port 443)"),
     (TimeoutError("handshake timed out"), "délai dépassé lors de la connexion TLS (port 443)"),
     (socket.gaierror(11001, "getaddrinfo failed"), "nom d'hôte introuvable"),
-    (ConnectionRefusedError(), "connexion refusée sur le port 443"),
 ])
 def test_cible_injoignable(connexion, exception, motif):
     connexion["verifiee"] = exception
@@ -199,18 +199,19 @@ def test_cible_injoignable(connexion, exception, motif):
     assert resultat["message"] == "Contrôle TLS impossible (exemple.test:443) : {}.".format(motif)
 
 
+def fausse_recuperation(url, timeout, autoriser_local=False):
+    """Page obtenue (ici en HTTP), sans requête réseau."""
+    reponse = requests.Response()
+    reponse.status_code = 200
+    reponse.headers = CaseInsensitiveDict()
+    reponse._content = b"<html></html>"
+    reponse.encoding = "utf-8"
+    return reponse, [url]
+
+
 def test_tls_injoignable_donne_un_audit_partiel(connexion, monkeypatch):
-    """La page répond, mais pas le port TLS : audit partiel, aucune note."""
-    connexion["verifiee"] = ConnectionRefusedError()
-
-    def fausse_recuperation(url, timeout, autoriser_local=False):
-        reponse = requests.Response()
-        reponse.status_code = 200
-        reponse.headers = CaseInsensitiveDict()
-        reponse._content = b"<html></html>"
-        reponse.encoding = "utf-8"
-        return reponse, [url]
-
+    """La page répond, mais le port TLS ne répond pas à temps : audit partiel, aucune note."""
+    connexion["verifiee"] = socket.timeout("timed out")
     monkeypatch.setattr(moteur, "recuperer_page", fausse_recuperation)
     resultat = moteur.lancer_scan("http://exemple.test:8080", autoriser_local=True)
 
@@ -222,3 +223,33 @@ def test_tls_injoignable_donne_un_audit_partiel(connexion, monkeypatch):
     assert "HTTPS non disponible" not in resultat["rapport_texte"]
     assert "PAS accessible en HTTPS" not in resultat["rapport_texte"]
     assert "Hôte TLS       : exemple.test (port 443)" in resultat["rapport_texte"]
+
+# ---------------------------------------------------------------------------
+# C28 : site en HTTP seul
+# ---------------------------------------------------------------------------
+
+def test_connexion_refusee_sur_le_port_https(connexion):
+    connexion["verifiee"] = ConnectionRefusedError()
+    resultat = https_checker.verifier_https("https://exemple.test:8443")
+    assert resultat["statut"] == "succes"
+    assert resultat["details"]["certificat"]["etat"] == "https_absent"
+    assert observations(resultat) == {"Disponibilité HTTPS": (
+        "CRITIQUE", "Le site n'est PAS accessible en HTTPS (port 8443). "
+                    "connexion refusée sur le port 8443 : aucun service HTTPS")}
+
+
+def test_site_en_http_seul(connexion, monkeypatch):
+    """Page obtenue en HTTP, connexion refusée sur le port 443 : audit complet, HTTPS absent."""
+    connexion["verifiee"] = ConnectionRefusedError()
+    monkeypatch.setattr(moteur, "recuperer_page", fausse_recuperation)
+
+    resultat = moteur.lancer_scan("http://exemple.test", autoriser_local=True)
+
+    assert resultat["statut"] == "complet"
+    assert resultat["score"]["note"] is not None
+    tls = resultat["modules"][1]
+    assert tls["statut"] == "succes"
+    niveau, message = observations(tls)["Disponibilité HTTPS"]
+    assert niveau == "CRITIQUE"
+    assert "connexion refusée sur le port 443 : aucun service HTTPS" in message
+    assert "PAS accessible en HTTPS" in resultat["rapport_texte"]

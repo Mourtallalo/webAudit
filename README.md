@@ -1,4 +1,4 @@
-# WebAudit 2.0.2
+# WebAudit 2.0.3
 
 Scanner de vulnérabilités web élémentaires, développé dans le cadre du
 mémoire de fin de Licence 3 Réseaux et Télécommunications (ESTM 2025-2026,
@@ -154,6 +154,14 @@ le module HTTPS sait classer le problème.
   simple, erreur OpenSSL `WRONG_VERSION_NUMBER`) : ce port ne parle pas
   TLS. Le module HTTPS donne « Disponibilité HTTPS » CRITIQUE avec le
   message d'erreur, sans observation « Version du protocole TLS ».
+- **Site en HTTP seul** (aucun service sur le port HTTPS, connexion
+  refusée) : le serveur répond, puisque la page a été obtenue, mais refuse
+  la connexion sur le port HTTPS. Le module HTTPS donne « Disponibilité
+  HTTPS » CRITIQUE (« Le site n'est PAS accessible en HTTPS (port N).
+  connexion refusée sur le port N : aucun service HTTPS ») et l'audit est
+  **complet**.
+- **Délai dépassé sur le port HTTPS** : le module HTTPS est en erreur et
+  l'audit est partiel (voir « Limites connues »).
 
 Un audit partiel s'annonce partout (écran, PDF, rapport texte, page
 Comparer) par le même message : « Audit partiel : <module(s)> n'a pas
@@ -249,6 +257,11 @@ webaudit/
 
 ## Limites connues
 
+- **Délai dépassé sur le port HTTPS** : il n'est pas compté comme une
+  absence de HTTPS, car il peut venir du réseau (pare-feu qui ignore les
+  paquets, lenteur passagère) et pas du site. Le module HTTPS est alors en
+  erreur et l'audit est partiel, sans note. Seule une connexion refusée
+  est classée « HTTPS absent ».
 - **En-têtes : présence seulement.** L'outil vérifie qu'un en-tête est
   présent, pas que sa valeur est sûre (décision de l'auteur).
 - **TLS : version négociée seulement.** L'outil lit la version obtenue lors

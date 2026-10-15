@@ -2,7 +2,15 @@
 
 Version de référence : étiquette `v1.0-mesures-2026-10-14` (commit
 `d7bfbee`, interface web des mesures du 14/10/2026 et ligne de commande de
-juillet 2026). Version actuelle : `v2.0.2`.
+juillet 2026). Version actuelle : `v2.0.3`.
+
+## v2.0.3 — site en HTTP seul (lot F)
+
+| Identifiant | Ce qui a changé | Fichier(s) | Commit(s) |
+|---|---|---|---|
+| C28 | Connexion refusée sur le port HTTPS (la page ayant été obtenue) : état « https_absent », « Disponibilité HTTPS » CRITIQUE (« … aucun service HTTPS »), audit complet. Le délai dépassé reste « injoignable » (audit partiel) ; limite écrite dans le README. | `https_checker.py`, `tests/test_https.py`, `README.md` | commit de l'étiquette `v2.0.3` |
+| C07, E36 | Code de vérification 64 : « l'adresse IP n'est pas couverte par le certificat ». | `https_checker.py`, `tests/test_https.py` | commit de l'étiquette `v2.0.3` |
+| — | Version de l'outil 2.0.3. | `version.py`, `tests/test_rapports.py` | commit de l'étiquette `v2.0.3` |
 
 ## v2.0.2 — correctif d'affichage et de diagnostic (lot E)
 

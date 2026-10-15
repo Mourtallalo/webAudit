@@ -39,6 +39,7 @@ MOTIFS_CERTIFICAT = {
     20: "autorité de certification inconnue ou chaîne de certificats incomplète",
     21: "autorité de certification inconnue ou chaîne de certificats incomplète",
     62: "le nom d'hôte n'est pas couvert par le certificat",
+    64: "l'adresse IP n'est pas couverte par le certificat",
 }
 
 # Motifs OpenSSL d'une poignée de main refusée pour cause de version (E35).
@@ -126,8 +127,10 @@ def analyser_certificat(hote, port=PORT_HTTPS, timeout=10):
       - "certificat_refuse" : le serveur répond en HTTPS, mais son
                               certificat est refusé (motif dans « erreur ») ;
       - "version_refusee"   : poignée de main refusée en TLS 1.2 et 1.3 ;
-      - "https_absent"      : la connexion aboutit, mais pas en HTTPS ;
-      - "injoignable"       : nom introuvable, délai dépassé, connexion refusée.
+      - "https_absent"      : la connexion aboutit, mais pas en HTTPS, ou
+                              elle est refusée sur le port HTTPS (aucun
+                              service HTTPS, C28) ;
+      - "injoignable"       : nom introuvable, délai dépassé.
 
     Retour
     ------
@@ -179,7 +182,12 @@ def analyser_certificat(hote, port=PORT_HTTPS, timeout=10):
                          erreur="délai dépassé lors de la connexion TLS (port {})".format(port))
         return info_cert
     except ConnectionRefusedError:
-        info_cert.update(etat="injoignable", erreur="connexion refusée sur le port {}".format(port))
+        # C28 : ce contrôle ne s'exécute qu'une fois la page obtenue (sinon
+        # le scan est « impossible ») : le serveur répond, mais refuse la
+        # connexion sur le port HTTPS. C'est l'absence de HTTPS, pas une
+        # cible injoignable.
+        info_cert.update(etat="https_absent",
+                         erreur="connexion refusée sur le port {} : aucun service HTTPS".format(port))
         return info_cert
     except ConnectionResetError:
         info_cert.update(etat="https_absent",
@@ -233,8 +241,8 @@ def verifier_https(url, timeout=10, autoriser_local=False):
     Fonction principale du module : combine la vérification de la redirection
     et l'analyse du certificat, puis produit des observations classifiées.
 
-    Une cible injoignable (nom introuvable, délai dépassé, connexion
-    refusée) ne produit aucune observation : le module est marqué en
+    Une cible injoignable (nom introuvable, délai dépassé) ne produit
+    aucune observation : le module est marqué en
     erreur, et l'audit devient partiel.
 
     Retour

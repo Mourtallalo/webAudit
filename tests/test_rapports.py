@@ -117,14 +117,14 @@ def test_version_et_referentiel_dans_le_rapport_texte():
 # ---------------------------------------------------------------------------
 
 def test_version_dans_le_json(tmp_path, capsys):
-    assert VERSION == "2.0.2"
+    assert VERSION == "2.0.3"
     with pytest.raises(SystemExit):
         scanner.main(["--autorise", "inexistant.test", "--json", str(tmp_path / "r.json")])
     donnees = json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))
-    assert donnees["version_outil"] == "2.0.2"
+    assert donnees["version_outil"] == "2.0.3"
     assert donnees["date_referentiel_cms"] == "2026-10-14"
     web = application.app.test_client().post("/api/scan", json={"autorisation": True, "url": "inexistant.test"}).get_json()
-    assert web["version_outil"] == "2.0.2"
+    assert web["version_outil"] == "2.0.3"
 
 
 # ---------------------------------------------------------------------------
